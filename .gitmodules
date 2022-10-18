@@ -1,0 +1,3 @@
+[submodule "mont-arith"]
+	path = mont-arith
+	url = https://github.com/jwasinger/mont-arith
