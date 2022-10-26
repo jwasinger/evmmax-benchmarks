@@ -362,9 +362,9 @@ benches_xs = list(sorted(set(list(mulmont_evmmax_low.keys()) + list(mulmont_evmm
 mulmont_model = prep_models_for_graphing([(mulmont_eqn_low, fast_mulmont_cutoff), (mulmont_eqn_hi, 100000)], 'mulmont gas model', benches_xs)
 
 mulmont_evmmax = stitch_data(go_arith_benchmarks['mulmont']['non-unrolled'], go_arith_benchmarks['mulmont']['generic'], fast_mulmont_cutoff)
-scatterplot_ns_data("charts/mulmontmax_all.png", "MULMONTX Benchmarks", (1, 100000), [False, False], ["o", "-"], [mulmont_evmmax, mulmont_model])
-scatterplot_ns_data("charts/mulmontmax_cutoff.png", "MULMONTX Benchmarks", (1, 64), [False, False], ["o", "o"], [mulmont_evmmax, mulmont_model])
-scatterplot_ns_data("charts/mulmontmax_low.png", "MULMONTX Benchmarks with Gas Model Labeled", (1, 16), [False, True], ["o", "o"], [mulmont_evmmax, mulmont_model])
+scatterplot_ns_data("charts/mulmontx_all.png", "MULMONTX Benchmarks", (1, 100000), [False, False], ["o", "-"], [mulmont_evmmax, mulmont_model])
+scatterplot_ns_data("charts/mulmontx_med.png", "MULMONTX Benchmarks", (1, 64), [False, False], ["o", "o"], [mulmont_evmmax, mulmont_model])
+scatterplot_ns_data("charts/mulmontx_low.png", "MULMONTX Benchmarks with Gas Model Labeled", (1, 16), [False, True], ["o", "o"], [mulmont_evmmax, mulmont_model])
 
 addmod_model = prep_models_for_graphing([(addmod_eqn, 100000)], 'addmod model', benches_xs)
 
@@ -384,6 +384,6 @@ scatterplot_ns_data("charts/submodx_all.png", "SUBMODX Benchmarks", (1, 100000),
 setmod_evmmax = stitch_data(go_arith_benchmarks['setmod']['generic'], go_arith_benchmarks['setmod']['generic'], 100000)
 setmod_model = prep_models_for_graphing([(setmod_eqn, 100000)], 'setmod model', benches_xs)
 
-scatterplot_ns_data("charts/setmodmax_all.png", "SETMODMAX Benchmarks", (1, 100000), [False, False], ["-", "o"], [setmod_model, setmod_evmmax])
-scatterplot_ns_data("charts/setmodmax_cutoff.png", "SETMODMAX Benchmarks", (1, 64), [False, False], ["-", "o"], [setmod_model, setmod_evmmax])
+scatterplot_ns_data("charts/setmodx_all.png", "SETMODMAX Benchmarks", (1, 100000), [False, False], ["-", "o"], [setmod_model, setmod_evmmax])
+scatterplot_ns_data("charts/setmodx_med.png", "SETMODMAX Benchmarks", (1, 64), [False, False], ["-", "o"], [setmod_model, setmod_evmmax])
 scatterplot_ns_data("charts/setmodmax_low.png", "SETMODX Benchmarks with Gas Model Labeled", (1, 16), [True, False], ["o", "o"], [setmod_model, setmod_evmmax])
