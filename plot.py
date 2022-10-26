@@ -5,11 +5,15 @@
 
 
 from matplotlib import pyplot as plt
+from matplotlib.lines import Line2D
 import matplotlib
 import numpy as np
 import math, sys, re, statistics, os
 
 from matplotlib.pyplot import figure
+
+# 25 ns / gas
+GAS_RATE = 25.0
 
 def group_data(lines: [str]) -> [str]:
     result = {}
@@ -66,8 +70,8 @@ def read_go_arith_benchmarks(file_name):
         for bench_preset in benches_map[bench_op].keys():
             for bench_limbs in benches_map[bench_op][bench_preset].keys():
                 item = benches_map[bench_op][bench_preset][bench_limbs]
-                item['stddev'] = statistics.stdev(item['data'])
-                item['mean'] = statistics.mean(item['data'])
+                item['stddev'] = statistics.stdev(item['data']) / GAS_RATE
+                item['mean'] = statistics.mean(item['data']) / GAS_RATE
                 benches_map[bench_op][bench_preset][bench_limbs] = item # TODO is this necessary in python?
             #print("{},{},{},{},{}".format(bench_preset, bench_op, bench_limbs, item['mean'], item['stddev']))
     return benches_map
@@ -118,17 +122,18 @@ def scatterplot_ns_data(fname: str, name: str, graph_range, annotates: [bool], m
 
     plt.rcParams["figure.figsize"] = (20, 10)
     fig, ax = plt.subplots()
-    plt.ylim(0, y_min_all + span_y * 1.2)
-    plt.xlim(0, x_min_all + span_x * 1.2)
+    plt.ylim(0, y_min_all + int(span_y * 1.2))
+    plt.xlim(0, x_min_all + int(span_x * 1.2))
+    plt.xticks(stripped_args[0][1])
+
+    legend_lines = []
+    legend_labels = []
 
     for i, (x_range, x_vals, y_vals, y_errs, color, label, marker) in enumerate(stripped_args):
         assert len(x_vals) == len(y_vals)
 
         plt.xlabel("number of limbs")
         plt.ylabel("runtime (ns)")
-
-        plt.legend(loc="upper left")
-        ax.set(title=label)
         
         if len(y_errs) != 0:
             assert len(y_vals) == len(y_errs)
@@ -141,24 +146,30 @@ def scatterplot_ns_data(fname: str, name: str, graph_range, annotates: [bool], m
                     ax.annotate(y, (float(x) + 0.2, float(y)))
                 
                 ax.errorbar(x=x, y=y, xerr=0.0, yerr=y_err, fmt=markers[i], color=color)
+            ax.plot(x_vals, y_vals, markers[i], color=color, label=label)
         else:
-           continue
            if annotates[i]:
                for x, y in zip(x_vals, y_vals):
                    ax.annotate(y, (float(x) + 0.2, float(y)))
            ax.plot(x_vals, y_vals, markers[i], color=color, label=label)
+        
+        legend_lines.append(Line2D([0], [0], color=color, lw=4))
+        legend_labels.append(label)
 
+    ax.legend(legend_lines, legend_labels, loc="upper left")
+    ax.set(title=name)
     plt.savefig(fname)
 
-def fit_quadratic(input_range, output_range, graphing_dataset, intercept_min):
+def fit_quadratic(input_range, dataset, intercept_min):
     xs = []
     ys = []
 
-    for i, x_val in enumerate(graphing_dataset[1]):
-        if x_val < input_range[0] or x_val > input_range[1]:
+    for x in dataset.keys():
+        if x < input_range[0] or x > input_range[1]:
             continue
-        xs.append(x_val)
-        ys.append(graphing_dataset[2][i])
+
+        xs.append(x)
+        ys.append(dataset[x]['mean'])
 
     eqn = np.polyfit(np.array(xs), np.array(ys), 2)
     eqn = [round(val, 2) for val in eqn]
@@ -171,19 +182,18 @@ def fit_quadratic(input_range, output_range, graphing_dataset, intercept_min):
         if new_intercept > 0:
             eqn[2] = new_intercept
         
-    lof_x = [x for x in range(output_range[0], output_range[1] + 1)]
-    lof_y = [round(x ** 2 * eqn[0] + x * eqn[1] + eqn[2]) for x in range(output_range[0], output_range[1] + 1)]
-    return eqn, list(zip(lof_x, lof_y))
+    return eqn
 
-def fit_linear(input_range, output_range, graphing_dataset, intercept_min):
+def fit_linear(input_range, dataset, intercept_min):
     xs = []
     ys = []
 
-    for i, x_val in enumerate(graphing_dataset[1]):
-        if x_val < input_range[0] or x_val > input_range[1]:
+    for x in dataset.keys():
+        if x < input_range[0] or x > input_range[1]:
             continue
-        xs.append(x_val)
-        ys.append(graphing_dataset[2][i])
+
+        xs.append(x)
+        ys.append(dataset[x]['mean'])
 
     eqn = np.polyfit(np.array(xs), np.array(ys), 1)
     eqn = [round(val, 2) for val in eqn]
@@ -204,9 +214,7 @@ def fit_linear(input_range, output_range, graphing_dataset, intercept_min):
         if intercept > 0:
             eqn[1] = intercept
 
-    lof_x = [x for x in range(output_range[0], output_range[1] + 1)]
-    lof_y = [x * eqn[0] + eqn[1] for x in range(output_range[0], output_range[1] + 1)]
-    return eqn, list(zip(lof_x, lof_y))
+    return eqn
 
 def stitch_model(model1, model2, cutoff: int):
     result = []
@@ -242,8 +250,22 @@ def stitch_data(data1, data2, cutoff: int):
 
     return (graph_range, xs, ys, y_errs, 'red', 'place-holder-name', 'o')
 
-def prep_model_data_for_graphing(model, name, plot_range):
-    return (plot_range, [item[0] for item in model if item[0] <= plot_range[1] and item[0]  >= plot_range[0]], [item[1] for item in model if item[0] <= plot_range[1] and item[0]  >= plot_range[0]], [], 'black', name, 'o')
+def prep_models_for_graphing(models, name, xs):
+    ys = []
+    x_idx = 0
+
+    for model, range_max in models:
+        while x_idx < len(xs) and xs[x_idx] <= range_max:
+            y = round(eval_model(model, xs[x_idx]))
+            if y == 0:
+                y = 1
+            ys.append(y)
+            x_idx += 1
+    
+    return ((min(xs), max(xs)), xs, ys, [], 'black', name, 'o')
+
+# def prep_model_data_for_graphing(model, name, plot_range):
+#     return (plot_range, [item[0] for item in model if item[0] <= plot_range[1] and item[0]  >= plot_range[0]], [item[1] for item in model if item[0] <= plot_range[1] and item[0]  >= plot_range[0]], [], 'black', name, 'o')
 
 def strip_graphing_data(x_range, data):
     val = list(data)
@@ -272,48 +294,96 @@ def strip_graphing_data(x_range, data):
     val[2] = y_vals
     return tuple(val)
 
+def eval_model(model: [int], x: int) -> int:
+    result = 0
+    for i, coef in enumerate(model):
+        if i != len(model) - 1:
+            result += coef * (x ** (len(model) - 1 - i))
+        else:
+            result += coef
+
+    return result
+
+
+def format_model_eqn_for_graphing(model: [int], xs: [int]):
+    result = []
+
+    for x in xs:
+        result.append(eval_model(model, x))
+
+    return result
+
+# originals (fit from the data)
+# setmod_eqn = [62.71, 2679.49]
+# mulmont_eqn_lo = [2.28, -0.72, 5.8782000000000005]
+# mulmont_eqn_hi = [0.01, 246.97, 17683.52]
+# addmod_eqn = [4.61, 3.6100000000000003]
+
+setmod_eqn = [2.5, 107.0]
+mulmont_eqn_low = [0.092, -0.01, 0.24]
+mulmont_eqn_hi = [0.0004, 9.88, -268.0]
+addmod_eqn = [0.22, 0.144]
+
 fast_mulmont_cutoff = 49
 mulmont_benches = go_arith_benchmarks['mulmont']
-#eqn_mulmont_lof, mulmont_lof = fit_quadratic(zip([mulmont_benches['y_vals'])[:fast_mulmont_cutoff]
 mulmont_non_unrolled_data = format_bench_data_for_graphing((1, 64), go_arith_benchmarks['mulmont']['non-unrolled'], 'mulmont', 'red')
 mulmont_generic_data = format_bench_data_for_graphing((1, 64), go_arith_benchmarks['mulmont']['generic'], 'mulmont-generic', 'blue')
-setmod_non_unrolled_data = format_bench_data_for_graphing((1, 64), go_arith_benchmarks['setmod']['non-unrolled'], 'setmod-non-unrolled', 'red')
-setmod_generic_data = format_bench_data_for_graphing((1, 10000), go_arith_benchmarks['setmod']['generic'], 'setmod-generic', 'blue')
+
 addmod_non_unrolled_data = format_bench_data_for_graphing((1, 64), go_arith_benchmarks['addmod']['non-unrolled'], 'addmod-non-unrolled', 'red')
 submod_non_unrolled_data = format_bench_data_for_graphing((1, 64), go_arith_benchmarks['submod']['non-unrolled'], 'submod-non-unrolled', 'red')
+
+addmod_generic_data = format_bench_data_for_graphing((1, 100000), go_arith_benchmarks['addmod']['generic'], 'addmod-generic', 'blue')
+submod_generic_data = format_bench_data_for_graphing((1, 100000), go_arith_benchmarks['submod']['generic'], 'submod-generic', 'green')
+
+# setmod_non_unrolled_data = format_bench_data_for_graphing((1, 64), go_arith_benchmarks['setmod']['non-unrolled'], 'setmod-non-unrolled', 'red')
+setmod_generic_data = format_bench_data_for_graphing((1, 100000), go_arith_benchmarks['setmod']['generic'], 'setmod-generic', 'blue')
 
 #scatterplot_ns_data("charts/mulmont_generic.png", "MULMONTMAX Generic Benchmarks", False, [mulmont_non_unrolled_data, mulmont_generic_data])
 #scatterplot_ns_data('charts/setmod.png', 'SETMOD Benchmarks', False, [setmod_non_unrolled_data, setmod_generic_data])
 #scatterplot_ns_data('charts/addmod.png', 'ADDMOD Benchmarks', False, [addmod_non_unrolled_data])
 #scatterplot_ns_data('charts/submod.png', 'SUBMOD Benchmarks', False, [submod_non_unrolled_data])
 
-mulmont_non_unrolled_small_limbs_data = format_bench_data_for_graphing((1, 12), go_arith_benchmarks['mulmont']['non-unrolled'], 'mulmont', 'red')
-setmod_non_unrolled_small_limbs_data = format_bench_data_for_graphing((1, 12), go_arith_benchmarks['setmod']['non-unrolled'], 'setmod', 'green')
+#mulmont_non_unrolled_small_limbs_data = format_bench_data_for_graphing((1, 12), go_arith_benchmarks['mulmont']['non-unrolled'], 'mulmont', 'red')
+#setmod_non_unrolled_small_limbs_data = format_bench_data_for_graphing((1, 12), go_arith_benchmarks['setmod']['non-unrolled'], 'setmod', 'green')
 
 # linear cost for setmod up to cutoff
-setmod_low_eqn, setmod_low_cost = fit_linear((1, 32), (1, fast_mulmont_cutoff), setmod_non_unrolled_data, False)
-setmod_high_eqn, setmod_high_cost = fit_linear((fast_mulmont_cutoff, 10000), (fast_mulmont_cutoff, 10000), setmod_generic_data, True)
-setmod_model = stitch_model(setmod_low_cost, setmod_high_cost, fast_mulmont_cutoff)
+# setmod_low_eqn, setmod_low_cost = fit_linear((1, 32), (1, fast_mulmont_cutoff), setmod_non_unrolled_data, False)
+# setmod_model = stitch_model(setmod_low_cost, setmod_high_cost, fast_mulmont_cutoff)
+
+#mulmont_evmmax = stitch_data(go_arith_benchmarks['mulmont']['non-unrolled'], go_arith_benchmarks['mulmont']['generic'], fast_mulmont_cutoff)
+
+# setmod_evmmax = stitch_data(go_arith_benchmarks['setmod']['non-unrolled'], go_arith_benchmarks['setmod']['generic'], fast_mulmont_cutoff)
+
+mulmont_evmmax_low = go_arith_benchmarks['mulmont']['non-unrolled']
+mulmont_evmmax_hi = go_arith_benchmarks['mulmont']['generic']
+
+#mulmont_model = stitch_model(mulmont_cost_low, mulmont_cost_hi, fast_mulmont_cutoff)
+benches_xs = list(sorted(set(list(mulmont_evmmax_low.keys()) + list(mulmont_evmmax_hi.keys()))))
+mulmont_model = prep_models_for_graphing([(mulmont_eqn_low, fast_mulmont_cutoff), (mulmont_eqn_hi, 100000)], 'mulmont gas model', benches_xs)
 
 mulmont_evmmax = stitch_data(go_arith_benchmarks['mulmont']['non-unrolled'], go_arith_benchmarks['mulmont']['generic'], fast_mulmont_cutoff)
-setmod_evmmax = stitch_data(go_arith_benchmarks['setmod']['non-unrolled'], go_arith_benchmarks['setmod']['generic'], fast_mulmont_cutoff)
+scatterplot_ns_data("charts/mulmontmax_all.png", "MULMONTX Benchmarks", (1, 100000), [False, False], ["o", "-"], [mulmont_evmmax, mulmont_model])
+scatterplot_ns_data("charts/mulmontmax_cutoff.png", "MULMONTX Benchmarks", (1, 64), [False, False], ["o", "o"], [mulmont_evmmax, mulmont_model])
+scatterplot_ns_data("charts/mulmontmax_low.png", "MULMONTX Benchmarks with Gas Model Labeled", (1, 16), [False, True], ["o", "o"], [mulmont_evmmax, mulmont_model])
 
-mulmont_eqn_low, mulmont_cost_low = fit_quadratic((1, 12), (1, fast_mulmont_cutoff), mulmont_evmmax, True)
-mulmont_eqn_hi, mulmont_cost_hi = fit_quadratic((fast_mulmont_cutoff, 10000), (fast_mulmont_cutoff, 10000), mulmont_evmmax, True)
-mulmont_model = stitch_model(mulmont_cost_low, mulmont_cost_hi, fast_mulmont_cutoff)
+addmod_model = prep_models_for_graphing([(addmod_eqn, 100000)], 'addmod model', benches_xs)
 
-mulmont_evmmax_model_graphing_data = prep_model_data_for_graphing(mulmont_model, 'mulmont', (1, 100000))
-scatterplot_ns_data("charts/mulmontmax_all.png", "MULMONTMAX Arithmetic Benchmarks with Gas Model", (1, 100000), [False, False], ["o", "-"], [mulmont_evmmax, mulmont_evmmax_model_graphing_data])
-scatterplot_ns_data("charts/mulmontmax_cutoff.png", "MULMONTMAX Arithmetic Benchmarks with Gas Model", (1, 64), [False, False], ["o", "-"], [mulmont_evmmax, mulmont_evmmax_model_graphing_data])
+# TODO use mix of impls
+# TODO don't use stitch_data to put it in graphing format
+addmod_evmmax = stitch_data(go_arith_benchmarks['addmod']['generic'], go_arith_benchmarks['addmod']['generic'], 100000)
+submod_evmmax = stitch_data(go_arith_benchmarks['submod']['generic'], go_arith_benchmarks['submod']['generic'], 100000)
 
-setmod_evmmax_model_graphing_data = prep_model_data_for_graphing(setmod_model, "setmod", (1, 10000))
-scatterplot_ns_data("charts/setmodmax_all.png", "SETMODMAX model", (1, 10000), [False, False], ["o", "-"], [setmod_evmmax, setmod_evmmax_model_graphing_data])
-setmod_evmmax_model_graphing_data = prep_model_data_for_graphing(setmod_model, "setmod", (1, 10000))
-scatterplot_ns_data("charts/setmodmax_cutoff.png", "SETMODMAX model", (1, 64), [False, False], ["o", "-"], [setmod_evmmax, setmod_evmmax_model_graphing_data])
+scatterplot_ns_data("charts/addmodx_low.png", "ADDMODX Benchmarks with Gas Model Labelled", (1, 12), [False, True], ["o", 'o'], [addmod_evmmax, addmod_model])
+scatterplot_ns_data("charts/addmodx_med.png", "ADDMODX Benchmarks", (1, 64), [False, False], ["o", 'o'], [addmod_evmmax, addmod_model])
+scatterplot_ns_data("charts/addmodx_all.png", "ADDMODX Benchmarks", (1, 100000), [False, False], ["o", '-'], [addmod_evmmax, addmod_model])
 
-mulmont_evmmax_model_low_limbs_graphing_data = strip_graphing_data((1, 12), mulmont_evmmax_model_graphing_data)
-scatterplot_ns_data("charts/mulmontmax_low.png", "MULMONTMAX Arithmetic Benchmarks with Gas Model", (1, 12), [True, True], ["o", "o"], [mulmont_non_unrolled_small_limbs_data, mulmont_evmmax_model_low_limbs_graphing_data])
-mulmont_evmmax_model_graphing_data = list(mulmont_evmmax_model_graphing_data)
+scatterplot_ns_data("charts/submodx_low.png", "SUBMODX Benchmarks with Gas Model Labelled", (1, 12), [False, True], ["o", 'o'], [submod_evmmax, addmod_model])
+scatterplot_ns_data("charts/submodx_med.png", "SUBMODX Benchmarks", (1, 64), [False, False], ["o", 'o'], [submod_evmmax, addmod_model])
+scatterplot_ns_data("charts/submodx_all.png", "SUBMODX Benchmarks", (1, 100000), [False, False], ["o", '-'], [submod_evmmax, addmod_model])
 
-setmod_evmmax_model_low_limbs_graphing_data = strip_graphing_data((1, 12), setmod_evmmax_model_graphing_data)
-scatterplot_ns_data("charts/setmodmax_low.png", "SETMODMAX Benchmarks with Gas Model", (1, 12), [True, True], ["o", "o"], [setmod_non_unrolled_small_limbs_data, setmod_evmmax_model_low_limbs_graphing_data])
+setmod_evmmax = stitch_data(go_arith_benchmarks['setmod']['generic'], go_arith_benchmarks['setmod']['generic'], 100000)
+setmod_model = prep_models_for_graphing([(setmod_eqn, 100000)], 'setmod model', benches_xs)
+
+scatterplot_ns_data("charts/setmodmax_all.png", "SETMODMAX Benchmarks", (1, 100000), [False, False], ["-", "o"], [setmod_model, setmod_evmmax])
+scatterplot_ns_data("charts/setmodmax_cutoff.png", "SETMODMAX Benchmarks", (1, 64), [False, False], ["-", "o"], [setmod_model, setmod_evmmax])
+scatterplot_ns_data("charts/setmodmax_low.png", "SETMODX Benchmarks with Gas Model Labeled", (1, 16), [True, False], ["o", "o"], [setmod_model, setmod_evmmax])
