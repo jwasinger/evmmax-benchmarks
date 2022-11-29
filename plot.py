@@ -12,8 +12,8 @@ import math, sys, re, statistics, os
 
 from matplotlib.pyplot import figure
 
-# 25 ns / gas
-GAS_RATE = 25.0
+# 30 ns / gas
+GAS_RATE = 30.0
 
 def group_data(lines: [str]) -> [str]:
     result = {}
@@ -37,6 +37,38 @@ def insert_bench(benches_map, bench_preset, bench_op, bench_limbs, time):
 
     benches_map[bench_op][bench_preset][bench_limbs]['data'].append(time)
 
+def read_evm_arith_benchmarks(file_name):
+    input_lines = []
+    with open(file_name) as f:
+        input_lines = f.readlines()
+
+    benches_map = {}
+    for line in input_lines[1:]:
+        line_parts = line.strip('\n').split(',')
+        bench_op = line_parts[0]
+        if bench_op == "MULMONTX":
+            bench_op = "mulmont"
+        elif bench_op == "ADDMODX":
+            bench_op = "addmod"
+        elif bench_op == "SUBMODX":
+            bench_op = "submod"
+        else:
+            raise Exception("unexpected")
+
+        bench_limbs = int(line_parts[1])
+        bench_time = float(line_parts[2]) / GAS_RATE
+        insert_bench(benches_map, "non-unrolled", bench_op, bench_limbs, bench_time)
+        foo = 'bar'
+
+    for bench_op in benches_map.keys():
+        for bench_preset in benches_map[bench_op].keys():
+            for bench_limbs in benches_map[bench_op][bench_preset].keys():
+                item = benches_map[bench_op][bench_preset][bench_limbs]
+                item['stddev'] = statistics.stdev(item['data'])
+                item['mean'] = statistics.mean(item['data'])
+                benches_map[bench_op][bench_preset][bench_limbs] = item # TODO is this necessary in python?
+    return benches_map
+
 #input_lines = sys.stdin.readlines()
 def read_go_arith_benchmarks(file_name):
     input_lines = []
@@ -58,7 +90,7 @@ def read_go_arith_benchmarks(file_name):
         bench_limbs = int(bench_full.split('_')[2])
         assert bench_limbs % 64 == 0, "invalid bench limb bit width"
         bench_limbs //= 64
-        time = float(parts[2])
+        time = float(parts[2]) / GAS_RATE
         unit = re.search(r'(.*)\/', parts[3]).groups()[0]
 
         if unit != 'ns':
@@ -70,11 +102,15 @@ def read_go_arith_benchmarks(file_name):
         for bench_preset in benches_map[bench_op].keys():
             for bench_limbs in benches_map[bench_op][bench_preset].keys():
                 item = benches_map[bench_op][bench_preset][bench_limbs]
-                item['stddev'] = statistics.stdev(item['data']) / GAS_RATE
-                item['mean'] = statistics.mean(item['data']) / GAS_RATE
+                item['stddev'] = statistics.stdev(item['data'])
+                item['mean'] = statistics.mean(item['data'])
                 benches_map[bench_op][bench_preset][bench_limbs] = item # TODO is this necessary in python?
             #print("{},{},{},{},{}".format(bench_preset, bench_op, bench_limbs, item['mean'], item['stddev']))
     return benches_map
+
+evm_le_benchmarks = read_evm_arith_benchmarks("benchmarks-results/evm-le.csv")
+evm_le_asm_384bit_benchmarks = read_evm_arith_benchmarks("benchmarks-results/bench_results_384bit_asm.csv")
+evm_be_benchmarks = read_evm_arith_benchmarks("benchmarks-results/evm-be.csv")
 
 go_arith_benchmarks = read_go_arith_benchmarks("benchmarks-results/go-arith-benchmarks.txt")
 
@@ -132,8 +168,8 @@ def scatterplot_ns_data(fname: str, name: str, graph_range, annotates: [bool], m
     for i, (x_range, x_vals, y_vals, y_errs, color, label, marker) in enumerate(stripped_args):
         assert len(x_vals) == len(y_vals)
 
-        plt.xlabel("number of limbs")
-        plt.ylabel("runtime (ns)")
+        plt.xlabel("input size (in 8-byte increments)")
+        plt.ylabel("gas cost est. (30ns = 1 gas)")
         
         if len(y_errs) != 0:
             assert len(y_vals) == len(y_errs)
@@ -250,6 +286,18 @@ def stitch_data(data1, data2, cutoff: int):
 
     return (graph_range, xs, ys, y_errs, 'red', 'place-holder-name', 'o')
 
+def prep_data_for_graphing(data, name, color):
+    xs = []
+    ys = []
+    y_errs = []
+
+    for key in data.keys():
+        xs.append(key)
+        ys.append(data[key]['mean'])
+        y_errs.append(data[key]['stddev'])
+
+    return ((1, 16), xs, ys, y_errs, color, name, 'o')
+
 def prep_models_for_graphing(models, name, xs):
     ys = []
     x_idx = 0
@@ -319,17 +367,26 @@ def format_model_eqn_for_graphing(model: [int], xs: [int]):
 # mulmont_eqn_hi = [0.01, 246.97, 17683.52]
 # addmod_eqn = [4.61, 3.6100000000000003]
 
+# TODO remove this
+fast_mulmont_cutoff = 49
+
 setmod_eqn = [2.5, 107.0]
 mulmont_eqn_low = [0.092, -0.01, 0.24]
+# TODO remove this (mulmont/setmod will have one gas model)
 mulmont_eqn_hi = [0.0004, 9.88, -268.0]
 addmod_eqn = [0.22, 0.144]
 
-fast_mulmont_cutoff = 49
+import pdb; pdb.set_trace()
+mulmont_evm_le = prep_data_for_graphing(evm_le_benchmarks['mulmont']['non-unrolled'], "mulmont EVM benchmark - little-endian limb format", "yellow")
+mulmont_evm_be = prep_data_for_graphing(evm_be_benchmarks['mulmont']['non-unrolled'], "mulmont EVM benchmark - big-endian limb format", "purple")
+mulmont_evm_le_asm_384bit = prep_data_for_graphing(evm_le_asm_384bit_benchmarks['mulmont']['non-unrolled'], "mulmont EVM benchmark (asm impl)", "green")
+
+# fast_mulmont_cutoff = 49
 mulmont_benches = go_arith_benchmarks['mulmont']
-mulmont_non_unrolled_data = format_bench_data_for_graphing((1, 64), go_arith_benchmarks['mulmont']['non-unrolled'], 'mulmont', 'red')
+mulmont_non_unrolled_data = format_bench_data_for_graphing((1, 64), go_arith_benchmarks['mulmont']['non-unrolled'], 'mulmont arithmetic', 'red')
 mulmont_generic_data = format_bench_data_for_graphing((1, 64), go_arith_benchmarks['mulmont']['generic'], 'mulmont-generic', 'blue')
 
-addmod_non_unrolled_data = format_bench_data_for_graphing((1, 64), go_arith_benchmarks['addmod']['non-unrolled'], 'addmod-non-unrolled', 'red')
+addmod_non_unrolled_data = format_bench_data_for_graphing((1, 64), go_arith_benchmarks['addmod']['non-unrolled'], 'addmod arithmetic', 'red')
 submod_non_unrolled_data = format_bench_data_for_graphing((1, 64), go_arith_benchmarks['submod']['non-unrolled'], 'submod-non-unrolled', 'red')
 
 addmod_generic_data = format_bench_data_for_graphing((1, 100000), go_arith_benchmarks['addmod']['generic'], 'addmod-generic', 'blue')
@@ -362,9 +419,9 @@ benches_xs = list(sorted(set(list(mulmont_evmmax_low.keys()) + list(mulmont_evmm
 mulmont_model = prep_models_for_graphing([(mulmont_eqn_low, fast_mulmont_cutoff), (mulmont_eqn_hi, 100000)], 'mulmont gas model', benches_xs)
 
 mulmont_evmmax = stitch_data(go_arith_benchmarks['mulmont']['non-unrolled'], go_arith_benchmarks['mulmont']['generic'], fast_mulmont_cutoff)
-scatterplot_ns_data("charts/mulmontx_all.png", "MULMONTX Benchmarks", (1, 100000), [False, False], ["o", "-"], [mulmont_evmmax, mulmont_model])
-scatterplot_ns_data("charts/mulmontx_med.png", "MULMONTX Benchmarks", (1, 64), [False, False], ["o", "o"], [mulmont_evmmax, mulmont_model])
-scatterplot_ns_data("charts/mulmontx_low.png", "MULMONTX Benchmarks with Gas Model Labeled", (1, 16), [False, True], ["o", "o"], [mulmont_evmmax, mulmont_model])
+#scatterplot_ns_data("charts/mulmontx_all.png", "MULMONTX Benchmarks", (1, 100000), [False, False], ["o", "-"], [mulmont_evmmax, mulmont_model])
+# scatterplot_ns_data("charts/mulmontx_med.png", "MULMONTX Benchmarks", (1, 64), [False, False], ["o", "o"], [mulmont_evmmax, mulmont_model])
+scatterplot_ns_data("charts/mulmontx_low.png", "MULMONTX Benchmarks with Gas Model Labeled", (1, 8), [False, True, False, False, False], ["o", "o", "o", "o", "o"], [mulmont_evmmax, mulmont_model, mulmont_evm_le, mulmont_evm_be, mulmont_evm_le_asm_384bit])
 
 addmod_model = prep_models_for_graphing([(addmod_eqn, 100000)], 'addmod model', benches_xs)
 
@@ -373,17 +430,17 @@ addmod_model = prep_models_for_graphing([(addmod_eqn, 100000)], 'addmod model', 
 addmod_evmmax = stitch_data(go_arith_benchmarks['addmod']['generic'], go_arith_benchmarks['addmod']['generic'], 100000)
 submod_evmmax = stitch_data(go_arith_benchmarks['submod']['generic'], go_arith_benchmarks['submod']['generic'], 100000)
 
-scatterplot_ns_data("charts/addmodx_low.png", "ADDMODX Benchmarks with Gas Model Labelled", (1, 12), [False, True], ["o", 'o'], [addmod_evmmax, addmod_model])
-scatterplot_ns_data("charts/addmodx_med.png", "ADDMODX Benchmarks", (1, 64), [False, False], ["o", 'o'], [addmod_evmmax, addmod_model])
-scatterplot_ns_data("charts/addmodx_all.png", "ADDMODX Benchmarks", (1, 100000), [False, False], ["o", '-'], [addmod_evmmax, addmod_model])
+scatterplot_ns_data("charts/addmodx_low.png", "ADDMODX Benchmarks with Gas Model Labelled", (1, 16), [False, True], ["o", 'o'], [addmod_evmmax, addmod_model])
+# scatterplot_ns_data("charts/addmodx_med.png", "ADDMODX Benchmarks", (1, 64), [False, False], ["o", 'o'], [addmod_evmmax, addmod_model])
+# scatterplot_ns_data("charts/addmodx_all.png", "ADDMODX Benchmarks", (1, 100000), [False, False], ["o", '-'], [addmod_evmmax, addmod_model])
 
-scatterplot_ns_data("charts/submodx_low.png", "SUBMODX Benchmarks with Gas Model Labelled", (1, 12), [False, True], ["o", 'o'], [submod_evmmax, addmod_model])
-scatterplot_ns_data("charts/submodx_med.png", "SUBMODX Benchmarks", (1, 64), [False, False], ["o", 'o'], [submod_evmmax, addmod_model])
-scatterplot_ns_data("charts/submodx_all.png", "SUBMODX Benchmarks", (1, 100000), [False, False], ["o", '-'], [submod_evmmax, addmod_model])
+scatterplot_ns_data("charts/submodx_low.png", "SUBMODX Benchmarks with Gas Model Labelled", (1, 16), [False, True], ["o", 'o'], [submod_evmmax, addmod_model])
+# scatterplot_ns_data("charts/submodx_med.png", "SUBMODX Benchmarks", (1, 64), [False, False], ["o", 'o'], [submod_evmmax, addmod_model])
+# scatterplot_ns_data("charts/submodx_all.png", "SUBMODX Benchmarks", (1, 100000), [False, False], ["o", '-'], [submod_evmmax, addmod_model])
 
 setmod_evmmax = stitch_data(go_arith_benchmarks['setmod']['generic'], go_arith_benchmarks['setmod']['generic'], 100000)
 setmod_model = prep_models_for_graphing([(setmod_eqn, 100000)], 'setmod model', benches_xs)
 
-scatterplot_ns_data("charts/setmodx_all.png", "SETMODMAX Benchmarks", (1, 100000), [False, False], ["-", "o"], [setmod_model, setmod_evmmax])
-scatterplot_ns_data("charts/setmodx_med.png", "SETMODMAX Benchmarks", (1, 64), [False, False], ["-", "o"], [setmod_model, setmod_evmmax])
+# scatterplot_ns_data("charts/setmodx_all.png", "SETMODMAX Benchmarks", (1, 100000), [False, False], ["-", "o"], [setmod_model, setmod_evmmax])
+# scatterplot_ns_data("charts/setmodx_med.png", "SETMODMAX Benchmarks", (1, 64), [False, False], ["-", "o"], [setmod_model, setmod_evmmax])
 scatterplot_ns_data("charts/setmodx_low.png", "SETMODX Benchmarks with Gas Model Labeled", (1, 16), [True, False], ["o", "o"], [setmod_model, setmod_evmmax])
