@@ -7562,5 +7562,35 @@ BenchmarkOps/generic_submod_6080256#06-4 	    1810	    653115 ns/op
 BenchmarkOps/generic_submod_6080256#07-4 	    1813	    649651 ns/op
 BenchmarkOps/generic_submod_6080256#08-4 	    1810	    658572 ns/op
 BenchmarkOps/generic_submod_6080256#09-4 	    1782	    658005 ns/op
+BenchmarkOps/asm384_addmod_384-4                84787563                12.15 ns/op
+BenchmarkOps/asm384_addmod_384#01-4             97800972                12.25 ns/op
+BenchmarkOps/asm384_addmod_384#02-4             98193085                12.05 ns/op
+BenchmarkOps/asm384_addmod_384#03-4             98366994                12.14 ns/op
+BenchmarkOps/asm384_addmod_384#04-4             90805524                12.20 ns/op
+BenchmarkOps/asm384_addmod_384#05-4             86720647                12.02 ns/op
+BenchmarkOps/asm384_addmod_384#06-4             91596452                12.19 ns/op
+BenchmarkOps/asm384_addmod_384#07-4             99641169                12.38 ns/op
+BenchmarkOps/asm384_addmod_384#08-4             83618727                12.54 ns/op
+BenchmarkOps/asm384_addmod_384#09-4             90118106                14.07 ns/op
+BenchmarkOps/asm384_submod_384-4                93610578                12.52 ns/op
+BenchmarkOps/asm384_submod_384#01-4             70146296                14.50 ns/op
+BenchmarkOps/asm384_submod_384#02-4             92571237                13.90 ns/op
+BenchmarkOps/asm384_submod_384#03-4             90624858                13.40 ns/op
+BenchmarkOps/asm384_submod_384#04-4             85313774                15.63 ns/op
+BenchmarkOps/asm384_submod_384#05-4             92697212                13.28 ns/op
+BenchmarkOps/asm384_submod_384#06-4             98140426                12.16 ns/op
+BenchmarkOps/asm384_submod_384#07-4             101609290               11.93 ns/op
+BenchmarkOps/asm384_submod_384#08-4             95042804                11.95 ns/op
+BenchmarkOps/asm384_submod_384#09-4             101813608               12.04 ns/op
+BenchmarkOps/asm384_mulmont_384-4               25595103                45.28 ns/op
+BenchmarkOps/asm384_mulmont_384#01-4            24235278                45.67 ns/op
+BenchmarkOps/asm384_mulmont_384#02-4            23590550                45.57 ns/op
+BenchmarkOps/asm384_mulmont_384#03-4            25163995                45.61 ns/op
+BenchmarkOps/asm384_mulmont_384#04-4            24671794                45.40 ns/op
+BenchmarkOps/asm384_mulmont_384#05-4            24499054                46.09 ns/op
+BenchmarkOps/asm384_mulmont_384#06-4            23622489                44.92 ns/op
+BenchmarkOps/asm384_mulmont_384#07-4            24925452                45.56 ns/op
+BenchmarkOps/asm384_mulmont_384#08-4            25043670                45.18 ns/op
+BenchmarkOps/asm384_mulmont_384#09-4            25172334                44.50 ns/op
 PASS
 ok  	github.com/jwasinger/mont-arith	897.960s

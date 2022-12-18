@@ -12,15 +12,17 @@ import math, sys, re, statistics, os
 
 from matplotlib.pyplot import figure
 
-# 30 ns / gas
-GAS_RATE = 30.0
+# 25 ns / gas
+GAS_RATE = 25.0
 
 evm_be_color = "#ff7878"
 go_arith_be_color = "#E24C4C"
 evm_le_color = "#ffff78"
 go_arith_le_color = "#a0a011"
 model_color = "black"
-asm384_color = "green"
+asm384_color = "#61CD61"
+asm384_arith_color = "#1EA41E"
+setmod_color = "purple"
 
 def group_data(lines: [str]) -> [str]:
     result = {}
@@ -380,8 +382,8 @@ def format_model_eqn_for_graphing(model: [int], xs: [int]):
 # TODO remove this
 fast_mulmont_cutoff = 49
 
-setmod_eqn = [2.5, 107.0]
-mulmont_eqn_low = [0.092, -0.01, 0.24]
+setmod_eqn = [2.5, 65.0]
+mulmont_eqn_low = [0.095, 0, 1.00]
 # TODO remove this (mulmont/setmod will have one gas model)
 mulmont_eqn_hi = [0.0004, 9.88, -268.0]
 addmod_eqn = [0.22, 0.144]
@@ -416,6 +418,13 @@ submod_generic_data = format_bench_data_for_graphing((1, 100000), go_arith_bench
 # setmod_non_unrolled_data = format_bench_data_for_graphing((1, 64), go_arith_benchmarks['setmod']['non-unrolled'], 'setmod-non-unrolled', 'red')
 setmod_generic_data = format_bench_data_for_graphing((1, 100000), go_arith_benchmarks['setmod']['generic'], 'setmod-generic', 'blue')
 
+setmod_arith_be = prep_data_for_graphing(go_arith_benchmarks_be['setmod']['non-unrolled'], "setmod arithmetic - big-endian limbs", setmod_color)
+
+mulmont_arith_asm384 = prep_data_for_graphing(go_arith_benchmarks['mulmont']['asm384'], 'mulmont arithmetic - little-endian limbs', asm384_arith_color)
+addmod_arith_asm384 = prep_data_for_graphing(go_arith_benchmarks['addmod']['asm384'], 'addmod arithmetic - little-endian limbs', asm384_arith_color)
+submod_arith_asm384 = prep_data_for_graphing(go_arith_benchmarks['submod']['asm384'], 'submod arithmetic - little-endian limbs', asm384_arith_color)
+import pdb; pdb.set_trace()
+
 #scatterplot_ns_data("charts/mulmont_generic.png", "MULMONTMAX Generic Benchmarks", False, [mulmont_non_unrolled_data, mulmont_generic_data])
 #scatterplot_ns_data('charts/setmod.png', 'SETMOD Benchmarks', False, [setmod_non_unrolled_data, setmod_generic_data])
 #scatterplot_ns_data('charts/addmod.png', 'ADDMOD Benchmarks', False, [addmod_non_unrolled_data])
@@ -442,7 +451,7 @@ mulmont_model = prep_models_for_graphing([(mulmont_eqn_low, fast_mulmont_cutoff)
 mulmont_evmmax = stitch_data(go_arith_benchmarks['mulmont']['non-unrolled'], go_arith_benchmarks['mulmont']['generic'], fast_mulmont_cutoff, "mulmont arithmetic (little-endian)", go_arith_le_color)
 #scatterplot_ns_data("charts/mulmontx_all.png", "MULMONTX Benchmarks", (1, 100000), [False, False], ["o", "-"], [mulmont_evmmax, mulmont_model])
 # scatterplot_ns_data("charts/mulmontx_med.png", "MULMONTX Benchmarks", (1, 64), [False, False], ["o", "o"], [mulmont_evmmax, mulmont_model])
-scatterplot_ns_data("charts/mulmontx_low.png", "MULMONTX Benchmarks with Gas Model Labeled", (1, 8), [False, False, True, False, False, False], ["o", "o", "o", "o", "o", "o"], [mulmont_evmmax, mulmont_go_arith_be, mulmont_model, mulmont_evm_le, mulmont_evm_be, mulmont_evm_le_asm_384bit])
+scatterplot_ns_data("charts/mulmontx_low.png", "MULMONTX Benchmarks with Gas Model Labeled", (1, 8), [False, False, True, False, False, False, False], ["o", "o", "o", "o", "o", "o", "o"], [mulmont_evmmax, mulmont_go_arith_be, mulmont_model, mulmont_evm_le, mulmont_evm_be, mulmont_evm_le_asm_384bit, mulmont_arith_asm384])
 
 addmod_model = prep_models_for_graphing([(addmod_eqn, 100000)], 'addmod model', benches_xs)
 
@@ -451,11 +460,11 @@ addmod_model = prep_models_for_graphing([(addmod_eqn, 100000)], 'addmod model', 
 addmod_evmmax = stitch_data(go_arith_benchmarks['addmod']['generic'], go_arith_benchmarks['addmod']['generic'], 100000, "addmod arithmetic (little-endian)", go_arith_le_color)
 submod_evmmax = stitch_data(go_arith_benchmarks['submod']['generic'], go_arith_benchmarks['submod']['generic'], 100000, "submod arithmetic (little-endian)", go_arith_le_color)
 
-scatterplot_ns_data("charts/addmodx_low.png", "ADDMODX Benchmarks with Gas Model Labelled", (1, 16), [False, False, True, False, False, False], ["o", "o", 'o', 'o', 'o', 'o'], [addmod_evmmax, addmod_go_arith_be, addmod_model, addmod_evm_le, addmod_evm_le_asm_384bit, addmod_evm_be])
+scatterplot_ns_data("charts/addmodx_low.png", "ADDMODX Benchmarks with Gas Model Labelled", (1, 16), [False, False, True, False, False, False, False], ["o", "o", 'o', 'o', 'o', 'o', "o"], [addmod_evmmax, addmod_go_arith_be, addmod_model, addmod_evm_le, addmod_evm_le_asm_384bit, addmod_evm_be, addmod_arith_asm384])
 # scatterplot_ns_data("charts/addmodx_med.png", "ADDMODX Benchmarks", (1, 64), [False, False], ["o", 'o'], [addmod_evmmax, addmod_model])
 # scatterplot_ns_data("charts/addmodx_all.png", "ADDMODX Benchmarks", (1, 100000), [False, False], ["o", '-'], [addmod_evmmax, addmod_model])
 
-scatterplot_ns_data("charts/submodx_low.png", "SUBMODX Benchmarks with Gas Model Labelled", (1, 16), [False, False, True, False, False, False], ["o", 'o', 'o', 'o', 'o', 'o'], [submod_evmmax, submod_go_arith_be, addmod_model, submod_evm_le, submod_evm_le_asm_384bit, submod_evm_be])
+scatterplot_ns_data("charts/submodx_low.png", "SUBMODX Benchmarks with Gas Model Labelled", (1, 16), [False, False, False, False, True, False, False], ["o", 'o', 'o', 'o', 'o', 'o', "o"], [submod_go_arith_be,  submod_evm_le, submod_evm_le_asm_384bit, submod_arith_asm384, addmod_model, submod_evm_be, submod_evmmax])
 # scatterplot_ns_data("charts/submodx_med.png", "SUBMODX Benchmarks", (1, 64), [False, False], ["o", 'o'], [submod_evmmax, addmod_model])
 # scatterplot_ns_data("charts/submodx_all.png", "SUBMODX Benchmarks", (1, 100000), [False, False], ["o", '-'], [submod_evmmax, addmod_model])
 
@@ -464,4 +473,4 @@ setmod_model = prep_models_for_graphing([(setmod_eqn, 100000)], 'setmod model', 
 
 # scatterplot_ns_data("charts/setmodx_all.png", "SETMODMAX Benchmarks", (1, 100000), [False, False], ["-", "o"], [setmod_model, setmod_evmmax])
 # scatterplot_ns_data("charts/setmodx_med.png", "SETMODMAX Benchmarks", (1, 64), [False, False], ["-", "o"], [setmod_model, setmod_evmmax])
-scatterplot_ns_data("charts/setmodx_low.png", "SETMODX Benchmarks with Gas Model Labeled", (1, 16), [True, False], ["o", "o"], [setmod_model, setmod_evmmax])
+scatterplot_ns_data("charts/setmodx_low.png", "SETMODX Benchmarks with Gas Model Labeled", (1, 16), [True, False], ["o", "o"], [setmod_model, setmod_arith_be])
