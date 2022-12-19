@@ -205,7 +205,7 @@ def scatterplot_ns_data(fname: str, name: str, graph_range, annotates: [bool], m
         legend_labels.append(label)
 
     ax.legend(legend_lines, legend_labels, loc="upper left")
-    ax.set(title=name)
+    #ax.set(title=name)
     plt.savefig(fname)
 
 def fit_quadratic(input_range, dataset, intercept_min):
