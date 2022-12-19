@@ -382,18 +382,18 @@ def format_model_eqn_for_graphing(model: [int], xs: [int]):
 # TODO remove this
 fast_mulmont_cutoff = 49
 
-setmod_eqn = [2.5, 65.0]
-mulmont_eqn_low = [0.095, 0, 1.00]
+setmod_eqn = [3.8, 75.0]
+mulmont_eqn_low = [0.1, 0, 0.7]
 # TODO remove this (mulmont/setmod will have one gas model)
 mulmont_eqn_hi = [0.0004, 9.88, -268.0]
-addmod_eqn = [0.22, 0.144]
+addmod_eqn = [0.2, 0.15]
 
 mulmont_go_arith_be = prep_data_for_graphing(go_arith_benchmarks_be['mulmont']['non-unrolled'], "eip-5843 - arithmetic", go_arith_be_color)
 addmod_go_arith_be = prep_data_for_graphing(go_arith_benchmarks_be['addmod']['non-unrolled'], "eip-5843 - arithmetic", go_arith_be_color)
 submod_go_arith_be = prep_data_for_graphing(go_arith_benchmarks_be['submod']['non-unrolled'], "eip-5843 - arithmetic", go_arith_be_color)
 
 mulmont_evm_le = prep_data_for_graphing(evm_le_benchmarks['mulmont']['non-unrolled'], "little-endian - evm", evm_le_color)
-mulmont_evm_be = prep_data_for_graphing(evm_be_benchmarks['mulmont']['non-unrolled'], "little-endian - evm", evm_be_color)
+mulmont_evm_be = prep_data_for_graphing(evm_be_benchmarks['mulmont']['non-unrolled'], "eip-5843 - evm", evm_be_color)
 mulmont_evm_le_asm_384bit = prep_data_for_graphing(evm_le_asm_384bit_benchmarks['mulmont']['non-unrolled'], "asm384 - evm", asm384_color)
 
 addmod_evm_le = prep_data_for_graphing(evm_le_benchmarks['addmod']['non-unrolled'], "little-endian - evm", evm_le_color)
