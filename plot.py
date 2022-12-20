@@ -386,7 +386,7 @@ setmod_eqn = [3.8, 75.0]
 mulmont_eqn_low = [0.1, 0, 0.7]
 # TODO remove this (mulmont/setmod will have one gas model)
 mulmont_eqn_hi = [0.0004, 9.88, -268.0]
-addmod_eqn = [0.2, 0.15]
+addmod_eqn = [0.2, 0.6]
 
 mulmont_go_arith_be = prep_data_for_graphing(go_arith_benchmarks_be['mulmont']['non-unrolled'], "eip-5843 - arithmetic", go_arith_be_color)
 addmod_go_arith_be = prep_data_for_graphing(go_arith_benchmarks_be['addmod']['non-unrolled'], "eip-5843 - arithmetic", go_arith_be_color)
