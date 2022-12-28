@@ -423,7 +423,6 @@ setmod_arith_be = prep_data_for_graphing(go_arith_benchmarks_be['setmod']['non-u
 mulmont_arith_asm384 = prep_data_for_graphing(go_arith_benchmarks['mulmont']['asm384'], 'asm384 - arithmetic', asm384_arith_color)
 addmod_arith_asm384 = prep_data_for_graphing(go_arith_benchmarks['addmod']['asm384'], 'asm384 - arithmetic', asm384_arith_color)
 submod_arith_asm384 = prep_data_for_graphing(go_arith_benchmarks['submod']['asm384'], 'asm384 - arithmetic', asm384_arith_color)
-import pdb; pdb.set_trace()
 
 #scatterplot_ns_data("charts/mulmont_generic.png", "MULMONTMAX Generic Benchmarks", False, [mulmont_non_unrolled_data, mulmont_generic_data])
 #scatterplot_ns_data('charts/setmod.png', 'SETMOD Benchmarks', False, [setmod_non_unrolled_data, setmod_generic_data])
