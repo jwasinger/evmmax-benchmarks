@@ -159,6 +159,8 @@ def scatterplot_ns_data(fname: str, name: str, graph_range, annotates: [bool], m
                 stripped_yerrs.append(y_err_val)
         stripped_args.append((arg[0], stripped_xs, stripped_ys, stripped_yerrs, arg[4], arg[5], arg[6]))
 
+    len_x = len(stripped_args[0][1])
+
     x_min_all = min([min([v for v in d[1]]) for d in stripped_args])
     x_max_all = max([max([v for v in d[1]]) for d in stripped_args])
     y_min_all = min([min([v for v in d[2]]) for d in stripped_args])
@@ -178,7 +180,7 @@ def scatterplot_ns_data(fname: str, name: str, graph_range, annotates: [bool], m
     for i, (x_range, x_vals, y_vals, y_errs, color, label, marker) in enumerate(stripped_args):
         assert len(x_vals) == len(y_vals)
 
-        plt.xlabel("input size (in 8-byte increments)")
+        plt.xlabel("input size (bits)")
         plt.ylabel("runtime (ns)")
         
         if len(y_errs) != 0:
@@ -204,6 +206,9 @@ def scatterplot_ns_data(fname: str, name: str, graph_range, annotates: [bool], m
         legend_lines.append(Line2D([0], [0], color=color, lw=4))
         legend_labels.append(label)
 
+    x_axis_labels = [str(i*64) for i in range(1, len_x+1)]
+    x_axis_pos = np.arange(1,len_x + 1)
+    plt.xticks(x_axis_pos, x_axis_labels, color='black', fontsize='10')
     ax.legend(legend_lines, legend_labels, loc="upper left")
     #ax.set(title=name)
     plt.savefig(fname)
