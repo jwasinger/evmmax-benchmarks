@@ -1,3 +1,15 @@
-[submodule "mont-arith"]
-	path = mont-arith
-	url = https://github.com/jwasinger/mont-arith
+[submodule "evm-benchmarks-eip-5843"]
+	path = evm-benchmarks-eip-5843
+	url = https://github.com/jwasinger/evm-benchmarks
+[submodule "evm-benchmarks-le"]
+	path = evm-benchmarks-le
+	url = https://github.com/jwasinger/evm-benchmarks
+[submodule "evm-benchmarks-asm384"]
+	path = evm-benchmarks-asm384
+	url = https://github.com/jwasinger/evm-benchmarks
+[submodule "evmmax-arith-little-endian"]
+	path = evmmax-arith-little-endian
+	url = https://github.com/jwasinger/evmmax-arith
+[submodule "evmmax-arith-eip5843"]
+	path = evmmax-arith-eip5843
+	url = https://github.com/jwasinger/evmmax-arith
