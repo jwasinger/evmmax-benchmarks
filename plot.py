@@ -117,12 +117,13 @@ def read_go_arith_benchmarks(file_name):
             #print("{},{},{},{},{}".format(bench_preset, bench_op, bench_limbs, item['mean'], item['stddev']))
     return benches_map
 
-evm_le_benchmarks = read_evm_arith_benchmarks("benchmarks-results/evm-le.csv")
-evm_le_asm_384bit_benchmarks = read_evm_arith_benchmarks("benchmarks-results/bench_results_384bit_asm.csv")
-evm_be_benchmarks = read_evm_arith_benchmarks("benchmarks-results/evm-be.csv")
+evm_le_benchmarks = read_evm_arith_benchmarks("benchmarks-results/geth-evm-little-endian.csv")
+evm_le_asm_384bit_benchmarks = read_evm_arith_benchmarks("benchmarks-results/geth-evm-asm384.csv")
+evm_be_benchmarks = read_evm_arith_benchmarks("benchmarks-results/geth-evm-eip-5843.csv")
 
-go_arith_benchmarks = read_go_arith_benchmarks("benchmarks-results/go-arith-benchmarks.txt")
-go_arith_benchmarks_be = read_go_arith_benchmarks("benchmarks-results/go-arith-benchmarks-be.txt")
+go_arith_benchmarks = read_go_arith_benchmarks("benchmarks-results/go-arith-benchmarks-le.txt")
+go_arith_benchmarks_be = read_go_arith_benchmarks("benchmarks-results/go-arith-benchmarks-eip5843.txt")
+go_arith_benchmarks_asm384 = read_go_arith_benchmarks("benchmarks-results/go-arith-benchmarks-asm384.txt")
 
 def format_bench_data_for_graphing(x_range, bench_data, label, color):
     x_vals = []
@@ -294,12 +295,13 @@ def stitch_data(data1, data2, cutoff: int, name, color):
         xs.append(key)
         ys.append(data1[key]['mean'])
         y_errs.append(data1[key]['stddev'])
-    for key in data2.keys():
-        if key <= cutoff:
-            continue
-        xs.append(key)
-        ys.append(data2[key]['mean'])
-        y_errs.append(data2[key]['stddev'])
+    if data2 != None:
+        for key in data2.keys():
+            if key <= cutoff:
+                continue
+            xs.append(key)
+            ys.append(data2[key]['mean'])
+            y_errs.append(data2[key]['stddev'])
 
     return (graph_range, xs, ys, y_errs, color, name, 'o')
 
@@ -412,22 +414,16 @@ submod_evm_le_asm_384bit = prep_data_for_graphing(evm_le_asm_384bit_benchmarks['
 # fast_mulmont_cutoff = 49
 mulmont_benches = go_arith_benchmarks['mulmont']
 mulmont_non_unrolled_data = format_bench_data_for_graphing((1, 64), go_arith_benchmarks['mulmont']['non-unrolled'], 'mulmont arithmetic', go_arith_le_color)
-mulmont_generic_data = format_bench_data_for_graphing((1, 64), go_arith_benchmarks['mulmont']['generic'], 'mulmont-generic', 'blue')
 
 addmod_non_unrolled_data = format_bench_data_for_graphing((1, 64), go_arith_benchmarks['addmod']['non-unrolled'], 'little-endian - arithmetic', go_arith_le_color)
 submod_non_unrolled_data = format_bench_data_for_graphing((1, 64), go_arith_benchmarks['submod']['non-unrolled'], 'little-endian - arithmetic', go_arith_le_color)
 
-addmod_generic_data = format_bench_data_for_graphing((1, 100000), go_arith_benchmarks['addmod']['generic'], 'addmod-generic', 'blue')
-submod_generic_data = format_bench_data_for_graphing((1, 100000), go_arith_benchmarks['submod']['generic'], 'submod-generic', 'green')
-
 # setmod_non_unrolled_data = format_bench_data_for_graphing((1, 64), go_arith_benchmarks['setmod']['non-unrolled'], 'setmod-non-unrolled', 'red')
-setmod_generic_data = format_bench_data_for_graphing((1, 100000), go_arith_benchmarks['setmod']['generic'], 'setmod-generic', 'blue')
-
 setmod_arith_be = prep_data_for_graphing(go_arith_benchmarks_be['setmod']['non-unrolled'], "setmod arithmetic - big-endian limbs", setmod_color)
 
-mulmont_arith_asm384 = prep_data_for_graphing(go_arith_benchmarks['mulmont']['asm384'], 'asm384 - arithmetic', asm384_arith_color)
-addmod_arith_asm384 = prep_data_for_graphing(go_arith_benchmarks['addmod']['asm384'], 'asm384 - arithmetic', asm384_arith_color)
-submod_arith_asm384 = prep_data_for_graphing(go_arith_benchmarks['submod']['asm384'], 'asm384 - arithmetic', asm384_arith_color)
+mulmont_arith_asm384 = prep_data_for_graphing(go_arith_benchmarks_asm384['mulmont']['asm384'], 'asm384 - arithmetic', asm384_arith_color)
+addmod_arith_asm384 = prep_data_for_graphing(go_arith_benchmarks_asm384['addmod']['asm384'], 'asm384 - arithmetic', asm384_arith_color)
+submod_arith_asm384 = prep_data_for_graphing(go_arith_benchmarks_asm384['submod']['asm384'], 'asm384 - arithmetic', asm384_arith_color)
 
 #scatterplot_ns_data("charts/mulmont_generic.png", "MULMONTMAX Generic Benchmarks", False, [mulmont_non_unrolled_data, mulmont_generic_data])
 #scatterplot_ns_data('charts/setmod.png', 'SETMOD Benchmarks', False, [setmod_non_unrolled_data, setmod_generic_data])
@@ -446,13 +442,14 @@ submod_arith_asm384 = prep_data_for_graphing(go_arith_benchmarks['submod']['asm3
 # setmod_evmmax = stitch_data(go_arith_benchmarks['setmod']['non-unrolled'], go_arith_benchmarks['setmod']['generic'], fast_mulmont_cutoff)
 
 mulmont_evmmax_low = go_arith_benchmarks['mulmont']['non-unrolled']
-mulmont_evmmax_hi = go_arith_benchmarks['mulmont']['generic']
+
+benches_xs = list(range(1, 16))
 
 #mulmont_model = stitch_model(mulmont_cost_low, mulmont_cost_hi, fast_mulmont_cutoff)
-benches_xs = list(sorted(set(list(mulmont_evmmax_low.keys()) + list(mulmont_evmmax_hi.keys()))))
-mulmont_model = prep_models_for_graphing([(mulmont_eqn_low, fast_mulmont_cutoff), (mulmont_eqn_hi, 100000)], 'eip-5843 mulmont gas model', benches_xs)
+import pdb; pdb.set_trace()
+mulmont_model = prep_models_for_graphing([(mulmont_eqn_low, 100000)], "mulmontx model", benches_xs)
 
-mulmont_evmmax = stitch_data(go_arith_benchmarks['mulmont']['non-unrolled'], go_arith_benchmarks['mulmont']['generic'], fast_mulmont_cutoff, "mulmont arithmetic (little-endian)", go_arith_le_color)
+mulmont_evmmax = stitch_data(go_arith_benchmarks['mulmont']['non-unrolled'], None, fast_mulmont_cutoff, "mulmont arithmetic (little-endian)", go_arith_le_color)
 #scatterplot_ns_data("charts/mulmontx_all.png", "MULMONTX Benchmarks", (1, 100000), [False, False], ["o", "-"], [mulmont_evmmax, mulmont_model])
 # scatterplot_ns_data("charts/mulmontx_med.png", "MULMONTX Benchmarks", (1, 64), [False, False], ["o", "o"], [mulmont_evmmax, mulmont_model])
 scatterplot_ns_data("charts/mulmontx_low.png", "MULMONTX Benchmarks with Gas Model Labeled", (1, 8), [False, False, True, False, False, False, False], ["o", "o", "o", "o", "o", "o", "o"], [mulmont_evmmax, mulmont_go_arith_be, mulmont_model, mulmont_evm_le, mulmont_evm_be, mulmont_evm_le_asm_384bit, mulmont_arith_asm384])
@@ -463,8 +460,8 @@ addmod_model = prep_models_for_graphing([(addmod_eqn, 100000)], 'addmod model', 
 
 # TODO use mix of impls
 # TODO don't use stitch_data to put it in graphing format
-addmod_evmmax = stitch_data(go_arith_benchmarks['addmod']['generic'], go_arith_benchmarks['addmod']['generic'], 100000, "little-endian - arithmetic", go_arith_le_color)
-submod_evmmax = stitch_data(go_arith_benchmarks['submod']['generic'], go_arith_benchmarks['submod']['generic'], 100000, "little-endian - arithmetic", go_arith_le_color)
+addmod_evmmax = stitch_data(go_arith_benchmarks['addmod']['non-unrolled'], None, 100000, "little-endian - arithmetic", go_arith_le_color)
+submod_evmmax = stitch_data(go_arith_benchmarks['submod']['non-unrolled'], None, 100000, "little-endian - arithmetic", go_arith_le_color)
 
 scatterplot_ns_data("charts/addmodx_all.png", "ADDMODX Benchmarks with Gas Model Labelled", (1, 16), [False, False, True, False, False, False, False], ["o", "o", 'o', 'o', 'o', 'o', "o"], [addmod_evmmax, addmod_go_arith_be, addmod_model, addmod_evm_le, addmod_evm_le_asm_384bit, addmod_evm_be, addmod_arith_asm384])
 # scatterplot_ns_data("charts/addmodx_med.png", "ADDMODX Benchmarks", (1, 64), [False, False], ["o", 'o'], [addmod_evmmax, addmod_model])
@@ -474,7 +471,7 @@ scatterplot_ns_data("charts/submodx_all.png", "SUBMODX Benchmarks with Gas Model
 # scatterplot_ns_data("charts/submodx_med.png", "SUBMODX Benchmarks", (1, 64), [False, False], ["o", 'o'], [submod_evmmax, addmod_model])
 # scatterplot_ns_data("charts/submodx_all.png", "SUBMODX Benchmarks", (1, 100000), [False, False], ["o", '-'], [submod_evmmax, addmod_model])
 
-setmod_evmmax = stitch_data(go_arith_benchmarks['setmod']['generic'], go_arith_benchmarks['setmod']['generic'], 100000, "eip-5843 - setmod", "purple")
+setmod_evmmax = stitch_data(go_arith_benchmarks['setmod']['non-unrolled'], None, 100000, "eip-5843 - setmod", "purple")
 setmod_model = prep_models_for_graphing([(setmod_eqn, 100000)], 'setmod model', benches_xs)
 
 # scatterplot_ns_data("charts/setmodx_all.png", "SETMODMAX Benchmarks", (1, 100000), [False, False], ["-", "o"], [setmod_model, setmod_evmmax])

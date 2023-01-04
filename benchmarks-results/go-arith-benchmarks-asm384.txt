@@ -1,0 +1,21 @@
+goos: linux
+goarch: amd64
+pkg: github.com/jwasinger/mont-arith
+cpu: Intel(R) Core(TM) i7-6500U CPU @ 2.50GHz
+BenchmarkOps/asm384_addmod_384-4         	102767626	        11.82 ns/op
+BenchmarkOps/asm384_addmod_384#01-4      	100000000	        11.70 ns/op
+BenchmarkOps/asm384_addmod_384#02-4      	96174051	        11.80 ns/op
+BenchmarkOps/asm384_addmod_384#03-4      	97669968	        11.70 ns/op
+BenchmarkOps/asm384_addmod_384#04-4      	96890125	        11.77 ns/op
+BenchmarkOps/asm384_submod_384-4         	100000000	        11.42 ns/op
+BenchmarkOps/asm384_submod_384#01-4      	98196474	        11.39 ns/op
+BenchmarkOps/asm384_submod_384#02-4      	97155654	        11.41 ns/op
+BenchmarkOps/asm384_submod_384#03-4      	98485861	        11.57 ns/op
+BenchmarkOps/asm384_submod_384#04-4      	100000000	        11.34 ns/op
+BenchmarkOps/asm384_mulmont_384-4        	25690969	        43.94 ns/op
+BenchmarkOps/asm384_mulmont_384#01-4     	27312106	        44.54 ns/op
+BenchmarkOps/asm384_mulmont_384#02-4     	26965219	        43.77 ns/op
+BenchmarkOps/asm384_mulmont_384#03-4     	27156355	        43.78 ns/op
+BenchmarkOps/asm384_mulmont_384#04-4     	27471607	        43.77 ns/op
+PASS
+ok  	github.com/jwasinger/mont-arith	18.705s
