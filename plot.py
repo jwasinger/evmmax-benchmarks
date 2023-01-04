@@ -449,12 +449,12 @@ benches_xs = list(range(1, 16))
 import pdb; pdb.set_trace()
 mulmont_model = prep_models_for_graphing([(mulmont_eqn_low, 100000)], "mulmontx model", benches_xs)
 
-mulmont_evmmax = stitch_data(go_arith_benchmarks['mulmont']['non-unrolled'], None, fast_mulmont_cutoff, "mulmont arithmetic (little-endian)", go_arith_le_color)
+mulmont_go_arith_le = stitch_data(go_arith_benchmarks['mulmont']['non-unrolled'], None, fast_mulmont_cutoff, "mulmont arithmetic (little-endian)", go_arith_le_color)
 #scatterplot_ns_data("charts/mulmontx_all.png", "MULMONTX Benchmarks", (1, 100000), [False, False], ["o", "-"], [mulmont_evmmax, mulmont_model])
 # scatterplot_ns_data("charts/mulmontx_med.png", "MULMONTX Benchmarks", (1, 64), [False, False], ["o", "o"], [mulmont_evmmax, mulmont_model])
-scatterplot_ns_data("charts/mulmontx_low.png", "MULMONTX Benchmarks with Gas Model Labeled", (1, 8), [False, False, True, False, False, False, False], ["o", "o", "o", "o", "o", "o", "o"], [mulmont_evmmax, mulmont_go_arith_be, mulmont_model, mulmont_evm_le, mulmont_evm_be, mulmont_evm_le_asm_384bit, mulmont_arith_asm384])
+scatterplot_ns_data("charts/mulmontx_low.png", "MULMONTX Benchmarks with Gas Model Labeled", (1, 8), [False, False, True, False, False, False, False], ["o", "o", "o", "o", "o", "o", "o"], [mulmont_go_arith_be, mulmont_evm_be,  mulmont_model, mulmont_go_arith_le, mulmont_evm_le, mulmont_arith_asm384, mulmont_evm_le_asm_384bit])
 
-scatterplot_ns_data("charts/mulmontx_all.png", "MULMONTX Benchmarks with Gas Model Labeled", (1, 16), [False, False, True, False, False, False, False], ["o", "o", "o", "o", "o", "o", "o"], [mulmont_evmmax, mulmont_go_arith_be, mulmont_model, mulmont_evm_le, mulmont_evm_be, mulmont_evm_le_asm_384bit, mulmont_arith_asm384])
+scatterplot_ns_data("charts/mulmontx_all.png", "MULMONTX Benchmarks with Gas Model Labeled", (1, 16), [False, False, True, False, False, False, False], ["o", "o", "o", "o", "o", "o", "o"], [mulmont_go_arith_be, mulmont_evm_be,  mulmont_model, mulmont_go_arith_le, mulmont_evm_le, mulmont_arith_asm384, mulmont_evm_le_asm_384bit])
 
 addmod_model = prep_models_for_graphing([(addmod_eqn, 100000)], 'addmod model', benches_xs)
 
@@ -463,11 +463,11 @@ addmod_model = prep_models_for_graphing([(addmod_eqn, 100000)], 'addmod model', 
 addmod_evmmax = stitch_data(go_arith_benchmarks['addmod']['non-unrolled'], None, 100000, "little-endian - arithmetic", go_arith_le_color)
 submod_evmmax = stitch_data(go_arith_benchmarks['submod']['non-unrolled'], None, 100000, "little-endian - arithmetic", go_arith_le_color)
 
-scatterplot_ns_data("charts/addmodx_all.png", "ADDMODX Benchmarks with Gas Model Labelled", (1, 16), [False, False, True, False, False, False, False], ["o", "o", 'o', 'o', 'o', 'o', "o"], [addmod_evmmax, addmod_go_arith_be, addmod_model, addmod_evm_le, addmod_evm_le_asm_384bit, addmod_evm_be, addmod_arith_asm384])
+scatterplot_ns_data("charts/addmodx_all.png", "ADDMODX Benchmarks with Gas Model Labelled", (1, 16), [False, False, True, False, False, False, False], ["o", "o", 'o', 'o', 'o', 'o', "o"], [mulmont_go_arith_be, mulmont_evm_be,  mulmont_model, mulmont_go_arith_le, mulmont_evm_le, mulmont_arith_asm384, mulmont_evm_le_asm_384bit])
 # scatterplot_ns_data("charts/addmodx_med.png", "ADDMODX Benchmarks", (1, 64), [False, False], ["o", 'o'], [addmod_evmmax, addmod_model])
 # scatterplot_ns_data("charts/addmodx_all.png", "ADDMODX Benchmarks", (1, 100000), [False, False], ["o", '-'], [addmod_evmmax, addmod_model])
 
-scatterplot_ns_data("charts/submodx_all.png", "SUBMODX Benchmarks with Gas Model Labelled", (1, 16), [False, False, False, False, True, False, False], ["o", 'o', 'o', 'o', 'o', 'o', "o"], [submod_go_arith_be,  submod_evm_le, submod_evm_le_asm_384bit, submod_arith_asm384, addmod_model, submod_evm_be, submod_evmmax])
+scatterplot_ns_data("charts/submodx_all.png", "SUBMODX Benchmarks with Gas Model Labelled", (1, 16), [False, False, False, False, True, False, False], ["o", 'o', 'o', 'o', 'o', 'o', "o"], [mulmont_go_arith_be, mulmont_evm_be,  mulmont_model, mulmont_go_arith_le, mulmont_evm_le, mulmont_arith_asm384, mulmont_evm_le_asm_384bit])
 # scatterplot_ns_data("charts/submodx_med.png", "SUBMODX Benchmarks", (1, 64), [False, False], ["o", 'o'], [submod_evmmax, addmod_model])
 # scatterplot_ns_data("charts/submodx_all.png", "SUBMODX Benchmarks", (1, 100000), [False, False], ["o", '-'], [submod_evmmax, addmod_model])
 
