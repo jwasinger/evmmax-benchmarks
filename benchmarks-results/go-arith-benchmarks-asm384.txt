@@ -2,20 +2,20 @@ goos: linux
 goarch: amd64
 pkg: github.com/jwasinger/mont-arith
 cpu: Intel(R) Core(TM) i7-6500U CPU @ 2.50GHz
-BenchmarkOps/asm384_addmod_384-4         	102767626	        11.82 ns/op
-BenchmarkOps/asm384_addmod_384#01-4      	100000000	        11.70 ns/op
-BenchmarkOps/asm384_addmod_384#02-4      	96174051	        11.80 ns/op
-BenchmarkOps/asm384_addmod_384#03-4      	97669968	        11.70 ns/op
-BenchmarkOps/asm384_addmod_384#04-4      	96890125	        11.77 ns/op
-BenchmarkOps/asm384_submod_384-4         	100000000	        11.42 ns/op
-BenchmarkOps/asm384_submod_384#01-4      	98196474	        11.39 ns/op
-BenchmarkOps/asm384_submod_384#02-4      	97155654	        11.41 ns/op
-BenchmarkOps/asm384_submod_384#03-4      	98485861	        11.57 ns/op
-BenchmarkOps/asm384_submod_384#04-4      	100000000	        11.34 ns/op
-BenchmarkOps/asm384_mulmont_384-4        	25690969	        43.94 ns/op
-BenchmarkOps/asm384_mulmont_384#01-4     	27312106	        44.54 ns/op
-BenchmarkOps/asm384_mulmont_384#02-4     	26965219	        43.77 ns/op
-BenchmarkOps/asm384_mulmont_384#03-4     	27156355	        43.78 ns/op
-BenchmarkOps/asm384_mulmont_384#04-4     	27471607	        43.77 ns/op
+BenchmarkOps/asm384_addmod_384-4         	104619924	        11.47 ns/op
+BenchmarkOps/asm384_addmod_384#01-4      	100000000	        11.59 ns/op
+BenchmarkOps/asm384_addmod_384#02-4      	100000000	        11.48 ns/op
+BenchmarkOps/asm384_addmod_384#03-4      	104014892	        11.55 ns/op
+BenchmarkOps/asm384_addmod_384#04-4      	104160530	        11.53 ns/op
+BenchmarkOps/asm384_submod_384-4         	89402276	        11.46 ns/op
+BenchmarkOps/asm384_submod_384#01-4      	106050703	        11.28 ns/op
+BenchmarkOps/asm384_submod_384#02-4      	100000000	        11.27 ns/op
+BenchmarkOps/asm384_submod_384#03-4      	100000000	        11.25 ns/op
+BenchmarkOps/asm384_submod_384#04-4      	99851636	        11.24 ns/op
+BenchmarkOps/asm384_mulmont_384-4        	26992692	        43.45 ns/op
+BenchmarkOps/asm384_mulmont_384#01-4     	27706255	        43.51 ns/op
+BenchmarkOps/asm384_mulmont_384#02-4     	27025336	        43.81 ns/op
+BenchmarkOps/asm384_mulmont_384#03-4     	26978386	        43.19 ns/op
+BenchmarkOps/asm384_mulmont_384#04-4     	27549775	        43.46 ns/op
 PASS
-ok  	github.com/jwasinger/mont-arith	18.705s
+ok  	github.com/jwasinger/mont-arith	21.681s
