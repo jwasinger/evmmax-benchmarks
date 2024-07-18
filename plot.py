@@ -9,11 +9,12 @@ from matplotlib.lines import Line2D
 import matplotlib
 import numpy as np
 import math, sys, re, statistics, os
+import copy
 
 from matplotlib.pyplot import figure
 
 # 25 ns / gas
-GAS_RATE = 25.0
+GAS_RATE = 27.0
 
 evm_op_color = "#ff7878"
 go_arith_be_color = "#E24C4C"
@@ -37,6 +38,7 @@ class ScatterPlotEntry():
         self.color = None
         self.label = None
         self.marker = None
+        self.annotate = False
 
     def add_datapoint(self, bit_width, time_ns):
         self.x_vals.append(int(bit_width))
@@ -137,15 +139,6 @@ def plot_bls12381(bench_data, output_file, categories, title, ylabel):
 
     plt.savefig(output_file)
 
-g1mul_benches, g2mul_benches = parse_bls12381_bench()
-plot_bls12381_time(g1mul_benches, g2mul_benches)
-plot_bls12381_gas_cost(g1mul_benches, g2mul_benches)
-
-
-arith_op_benchmarks = parse_op_bench("benchmarks-results/arith.csv")
-evm_op_benchmarks = parse_op_bench("benchmarks-results/evm-op-benchmarks.csv")
-
-bls12381_benchmarks = parse_bls12381_bench()
 
 
 
@@ -172,32 +165,81 @@ def scatterplot_ns_data(fname: str, name: str, args):
     plt.ylabel("runtime (ns)")
 
     for i, entry in enumerate(args):
-        assert len(entry.x_vals) == len(entry.y_vals)
+       assert len(entry.x_vals) == len(entry.y_vals)
         
-        if len(entry.y_errs) != 0:
-            for x, y in zip(entry.x_vals, entry.y_vals):
+       for x, y in zip(entry.x_vals, entry.y_vals):
+           if entry.annotate:
+               ax.annotate(int(y/GAS_RATE), (float(x) + 0.2, float(y)))
 
-                #if annotates[i]:
-                #    ax.annotate(y, (float(x) + 0.2, float(y)))
-                
-                ax.errorbar(x=x, y=y, fmt=entry.marker, color=color)
-            ax.plot(entry.x_vals, entry.y_vals, entry.marker, color=color, label=label)
-        else:
-           #if annotates[i]:
-           #    for x, y in zip(entry.x_vals, entry.y_vals):
-           #        # cheap hack because we are only executing this spot for
-           #        # annotating the model
-           #        ax.annotate(round(float(y) / GAS_RATE), (float(x) + 0.2, float(y)))
-           ax.plot(entry.x_vals, entry.y_vals, entry.marker, color=entry.color, label=entry.label)
-        
-        legend_lines.append(Line2D([0], [0], color=entry.color, lw=4))
-        legend_labels.append(entry.label)
+       ax.plot(entry.x_vals, entry.y_vals, entry.marker, color=entry.color, label=entry.label)
+
+       legend_lines.append(Line2D([0], [0], color=entry.color, lw=4))
+       legend_labels.append(entry.label)
 
     #x_axis_labels = [str(i*64) for i in range(1, len_x+1)]
     #x_axis_pos = np.arange(1,len_x + 1)
     #plt.xticks(x_axis_pos, x_axis_labels, color='black', fontsize='10')
     ax.legend(legend_lines, legend_labels, loc="upper left")
     plt.savefig(fname)
+
+def fit_quadratic(xs, ys, intercept_min):
+    eqn = np.polyfit(np.array(xs), np.array(ys), 2)
+    eqn = [round(val, 2) for val in eqn]
+
+    if intercept_min:
+        # y = a * x ** 2  + b * x + c
+        # want ys[0] = a * (xs[0]) ** 2 + b * xs[0] + c
+        # c = ys[0] - (a * xs[0] ** 2 + b * xs[0]) if it is positive
+        new_intercept = ys[0] - eqn[0] * xs[0] ** 2 + eqn[1] * xs[0]
+        if new_intercept > 0:
+            eqn[2] = new_intercept
+        
+    return eqn
+
+def fit_linear(xs, ys, intercept_min):
+
+    eqn = np.polyfit(np.array(xs), np.array(ys), 1)
+    eqn = [round(val, 2) for val in eqn]
+    
+    # make sure the line of fit goes thru the first limb
+    # TODO make this optional (I think addmod/submod needed it to get proper models)
+    # new_y_intercept_addmod = graphing_dataset[0][1] - abs(abs(eqn[0]) - abs(eqn[1]))
+    # eqn[1] = new_y_intercept_addmod
+
+    if intercept_min:
+        # y = mx + b
+        # y = eqn[0] * x + eqn[1]
+        # ys[0] = eqn[0] * xs[0] + b
+        # b = ys[0] - eqn[0] * xs[0] 
+        # if b > 0:
+            # eqn = b
+        intercept = ys[0] - eqn[0] * xs[0]
+        if intercept > 0:
+            eqn[1] = intercept
+
+    return eqn
+
+def __eval_model(model: [int], x: int) -> int:
+    result = 0
+    for i, coef in enumerate(model):
+        if i != len(model) - 1:
+            result += coef * (x ** (len(model) - 1 - i))
+        else:
+            result += coef
+
+    return result
+
+
+def eval_model(model: [int], xs: [int]):
+    result = []
+
+    for x in xs:
+        result.append(__eval_model(model, x))
+
+    return result
+
+arith_op_benchmarks = parse_op_bench("benchmarks-results/arith.csv")
+evm_op_benchmarks = parse_op_bench("benchmarks-results/evm-op-benchmarks.csv")
 
 addmodx_fall_back_evm = evm_op_benchmarks['fallbackaddmodx']
 addmodx_fall_back_evm.color = evm_op_color
@@ -223,6 +265,8 @@ addmodx_asm384_arith.marker = "o"
 addmodx_asm384_arith.x_range = 6
 addmodx_asm384_evm.x_range = 6
 
+# submodx
+
 submodx_fall_back_evm = evm_op_benchmarks['fallbacksubmodx']
 submodx_fall_back_evm.color = asm384_op_color
 submodx_fall_back_evm.label = "1"
@@ -233,147 +277,100 @@ submodx_fall_back_arith.color = arith_op_color
 submodx_fall_back_arith.label = "2"
 submodx_fall_back_arith.marker = "o"
 
+# TODO: submod asm ops
+
+# mulmodx
+
+mulmodx_fall_back_evm = evm_op_benchmarks['fallbackmulmodx']
+mulmodx_fall_back_evm.color = evm_op_color
+mulmodx_fall_back_evm.label = "1"
+mulmodx_fall_back_evm.marker = "o"
+
+mulmodx_fall_back_arith = arith_op_benchmarks['fallbackmulmodx']
+mulmodx_fall_back_arith.color = arith_op_color
+mulmodx_fall_back_arith.label = "2"
+mulmodx_fall_back_arith.marker = "o"
+
+mulmodx_asm384_evm = evm_op_benchmarks['arith384_asmmulmodx']
+mulmodx_asm384_evm.color = asm384_op_color
+mulmodx_asm384_evm.label = "1"
+mulmodx_asm384_evm.marker = "o"
+mulmodx_asm384_evm.x_range = 6
+
+mulmodx_asm384_arith = arith_op_benchmarks['asm384mulmodx']
+mulmodx_asm384_arith.color = asm384_arith_color
+mulmodx_asm384_arith.label = "2"
+mulmodx_asm384_arith.marker = "o"
+mulmodx_asm384_arith.x_range = 6
+mulmodx_asm384_evm.x_range = 6
+
+# setmod
+
 setmod_arith = arith_op_benchmarks['fallbacksetmod']
 setmod_arith.color = arith_op_color
 setmod_arith.label = "setmod arithmetic"
 setmod_arith.marker = "o"
 
 
+# gas models
+
+# addmodx/submodx
+addmodx_model = fit_quadratic(addmodx_fall_back_evm.x_vals, addmodx_fall_back_evm.y_vals, 0)
+
+addmodx_model_entry = ScatterPlotEntry()
+addmodx_model_entry.x_vals = addmodx_fall_back_evm.x_vals
+addmodx_model_entry.y_vals = [math.ceil(y_val / GAS_RATE) * GAS_RATE for y_val in eval_model(addmodx_model, addmodx_model_entry.x_vals)]
+addmodx_model_entry.color = "black"
+addmodx_model_entry.label = "addmodx gas model"
+addmodx_model_entry.marker = "o"
+addmodx_model_entry.annotate = True
+
+# submodx
+submodx_model_entry = copy.deepcopy(addmodx_model_entry)
+submodx_model_entry.label = "submodx gas model"
+
+# mulmodx
+mulmodx_model = fit_quadratic(mulmodx_fall_back_evm.x_vals, mulmodx_fall_back_evm.y_vals, 0)
+
+mulmodx_model_entry = ScatterPlotEntry()
+mulmodx_model_entry.x_vals = mulmodx_fall_back_evm.x_vals
+mulmodx_model_entry.y_vals = [math.ceil(y_val / GAS_RATE) * GAS_RATE for y_val in eval_model(mulmodx_model, mulmodx_model_entry.x_vals)]
+mulmodx_model_entry.color = "black"
+mulmodx_model_entry.label = "mulmodx gas model"
+mulmodx_model_entry.marker = "o"
+mulmodx_model_entry.annotate = True
+
+
+# setmod
+setmod_model = fit_linear(setmod_arith.x_vals, setmod_arith.y_vals, 0)
+
+setmod_model_entry = ScatterPlotEntry()
+setmod_model_entry.x_vals = setmod_arith.x_vals
+setmod_model_entry.y_vals = [math.ceil(y_val / GAS_RATE) * GAS_RATE for y_val in eval_model(setmod_model, setmod_model_entry.x_vals)]
+setmod_model_entry.color = "black"
+setmod_model_entry.label = "setmod gas model"
+setmod_model_entry.marker = "o"
+setmod_model_entry.annotate = True
+
 def plot_op_benchmarks():
     # graphs 1: scatterplot, addmodx.  entries: addsub-model, addmodx-fallback-evm, addmodx-fallback-arith, addmodx-asm384-arith, addmodx-asm384-evm
-    scatterplot_ns_data("charts/addmodx.png", "addmodx", [addmodx_fall_back_evm, addmodx_fall_back_arith, addmodx_asm384_arith, addmodx_asm384_evm])
+    scatterplot_ns_data("charts/addmodx.png", "addmodx", [addmodx_fall_back_evm, addmodx_fall_back_arith, addmodx_asm384_arith, addmodx_asm384_evm, addmodx_model_entry])
     # graphs 2: scatterplot submodx.  entries: addsub-model, submodx-fallback-evm, submodx-fallback-arith, submodx-asm384-arith, submodx-asm384-evm
-    scatterplot_ns_data("charts/submodx.png", "submodx", [submodx_fall_back_evm, submodx_fall_back_arith])
+    scatterplot_ns_data("charts/submodx.png", "submodx", [submodx_fall_back_evm, submodx_fall_back_arith, submodx_model_entry])
     # graphs 3: scatterplot mulmodx.  entries: mulmodx-model, mulmodx-fallback-evm, mulmodx-fallback-arith, mulmodx-asm384-arith, mulmodx-asm384-evm
+    scatterplot_ns_data("charts/mulmodx.png", "addmodx", [mulmodx_fall_back_evm, mulmodx_fall_back_arith, mulmodx_asm384_arith, mulmodx_asm384_evm, mulmodx_model_entry])
     # graphs 4: scatterplot setmod.  entries: setmod-model, setmod-arith
-    scatterplot_ns_data("charts/setmod.png", "setmod", [setmod_arith])
-    pass
-
-plot_op_benchmarks()
-
-def plot_bls_benchmarks():
-    # graphs 1: g1/g2 mul execution time (group order).  group by (fallback evm + fallback go , mulmodx-asm evm, asm384 evm + asm go
-    # graphs 2: g1/g2 mul cost (group order).  group by (precompile, asm384 evm, mulmodx-asm evm, fallback evm)
-    pass
-
-def fit_quadratic(input_range, dataset, intercept_min):
-    xs = []
-    ys = []
-
-    for x in dataset.keys():
-        if x < input_range[0] or x > input_range[1]:
-            continue
-
-        xs.append(x)
-        ys.append(dataset[x]['mean'])
-
-    eqn = np.polyfit(np.array(xs), np.array(ys), 2)
-    eqn = [round(val, 2) for val in eqn]
-
-    if intercept_min:
-        # y = a * x ** 2  + b * x + c
-        # want ys[0] = a * (xs[0]) ** 2 + b * xs[0] + c
-        # c = ys[0] - (a * xs[0] ** 2 + b * xs[0]) if it is positive
-        new_intercept = ys[0] - eqn[0] * xs[0] ** 2 + eqn[1] * xs[0]
-        if new_intercept > 0:
-            eqn[2] = new_intercept
-        
-    return eqn
-
-def fit_linear(input_range, dataset, intercept_min):
-    xs = []
-    ys = []
-
-    for x in dataset.keys():
-        if x < input_range[0] or x > input_range[1]:
-            continue
-
-        xs.append(x)
-        ys.append(dataset[x]['mean'])
-
-    eqn = np.polyfit(np.array(xs), np.array(ys), 1)
-    eqn = [round(val, 2) for val in eqn]
-    
-    # make sure the line of fit goes thru the first limb
-    # TODO make this optional (I think addmod/submod needed it to get proper models)
-    # new_y_intercept_addmod = graphing_dataset[0][1] - abs(abs(eqn[0]) - abs(eqn[1]))
-    # eqn[1] = new_y_intercept_addmod
-
-    if intercept_min:
-        # y = mx + b
-        # y = eqn[0] * x + eqn[1]
-        # ys[0] = eqn[0] * xs[0] + b
-        # b = ys[0] - eqn[0] * xs[0] 
-        # if b > 0:
-            # eqn = b
-        intercept = ys[0] - eqn[0] * xs[0]
-        if intercept > 0:
-            eqn[1] = intercept
-
-    return eqn
-
-# def prep_model_data_for_graphing(model, name, plot_range):
-#     return (plot_range, [item[0] for item in model if item[0] <= plot_range[1] and item[0]  >= plot_range[0]], [item[1] for item in model if item[0] <= plot_range[1] and item[0]  >= plot_range[0]], [], 'black', name, 'o')
-
-def strip_graphing_data(x_range, data):
-    val = list(data)
-    x_vals = []
-    y_vals = []
-    y_errs = []
-    if len(y_errs) == 0:
-        for x, y in zip(data[1], data[2]):
-            if x < x_range[0] or x > x_range[1]:
-                continue
-
-            x_vals.append(x)
-            y_vals.append(y)
-    else:
-        for x, y, y_err in zip(data[1], data[2]):
-            if x < x_range[0] or x > x_range[1]:
-                continue
-
-            x_vals.append(x)
-            y_vals.append(y)
-            y_errs.append(y_err)
-        val[3] = y_errs
-
-    val[0] = x_range
-    val[1] = x_vals
-    val[2] = y_vals
-    return tuple(val)
-
-def eval_model(model: [int], x: int) -> int:
-    result = 0
-    for i, coef in enumerate(model):
-        if i != len(model) - 1:
-            result += coef * (x ** (len(model) - 1 - i))
-        else:
-            result += coef
-
-    return result
+    scatterplot_ns_data("charts/setmod.png", "setmod", [setmod_arith, setmod_model_entry])
 
 
-def format_model_eqn_for_graphing(model: [int], xs: [int]):
-    result = []
 
-    for x in xs:
-        result.append(eval_model(model, x))
 
-    return result
+if __name__ == "__main__":
+    plot_op_benchmarks()
 
-# originals (fit from the data)
-# setmod_eqn = [62.71, 2679.49]
-# mulmont_eqn_lo = [2.28, -0.72, 5.8782000000000005]
-# mulmont_eqn_hi = [0.01, 246.97, 17683.52]
-# addmod_eqn = [4.61, 3.6100000000000003]
+    g1mul_benches, g2mul_benches = parse_bls12381_bench()
+    plot_bls12381_time(g1mul_benches, g2mul_benches)
+    plot_bls12381_gas_cost(g1mul_benches, g2mul_benches)
 
-# TODO remove this
-fast_mulmont_cutoff = 49
 
-setmod_eqn = [3.8, 75.0]
-mulmont_eqn_low = [0.1, 0, 0.7]
-# TODO remove this (mulmont/setmod will have one gas model)
-mulmont_eqn_hi = [0.0004, 9.88, -268.0]
-addmod_eqn = [0.2, 0.6]
-
-benches_xs = list(range(1, 16))
+    bls12381_benchmarks = parse_bls12381_bench()
