@@ -62,11 +62,92 @@ def parse_op_bench(data_file_name):
 
     return plot_entries
 
+def parse_bls12381_bench():
+    lines = []
+    with open("benchmarks-results/geth-bls12381-benchmarks.csv") as f:
+        lines = f.readlines()
+
+    g1mul_benches = {}
+    g2mul_benches = {}
+
+    for line in lines:
+        parts = line.strip('\n').strip(' ').split(',')
+        preset = parts[0]
+        bench = parts[1]
+        time_ns = int(parts[2])
+        gas_cost = int(parts[3])
+
+        if bench == "g1mulgenorder":
+            g1mul_benches[preset] = {"time_ns": time_ns, "gas_cost": gas_cost}
+        elif bench == "g2mulgenorder":
+            g2mul_benches[preset] = {"time_ns": time_ns, "gas_cost": gas_cost}
+        else:
+            continue
+
+    return g1mul_benches, g2mul_benches
+
+
+def plot_bls12381_time(g1mul_benches, g2mul_benches):
+    times = {
+            "native g1mul": (440000, 0, 490000),
+            "evm g1mul": (g1mul_benches["arith384_asm"]["time_ns"], g1mul_benches["mulmont384_asm"]["time_ns"],g1mul_benches["fallback"]["time_ns"]),
+            "native g2mul": (1296766, 0, 1515314),
+            "evm g2mul":(g2mul_benches['arith384_asm']['time_ns'],g2mul_benches['mulmont384_asm']['time_ns'],g2mul_benches['fallback']['time_ns'])
+            # old 
+            #"asm384": (g1mul_benches["arith384_asm"]["time_ns"], g2mul_benches['arith384_asm']['time_ns']),
+            #"mulmont384_asm": (g1mul_benches["mulmont384_asm"]["time_ns"], g2mul_benches['mulmont384_asm']['time_ns']),
+            #"fallback": (g1mul_benches["fallback"]["time_ns"], g2mul_benches['fallback']['time_ns']),
+    }
+    categories = ("asm all ops", "asm mulmodx only", "fallback all ops")
+    plot_bls12381(times, "charts/bls12381-time.png", categories, "Runtime: EVM and Native Implementations", "Runtime (μs)")
+
+def plot_bls12381_gas_cost(g1mul_benches, g2mul_benches):
+    gas_costs = {
+            "g1mul precompile": (12000, 0, 0),
+            "evm g1mul": (g1mul_benches["arith384_asm"]["gas_cost"], g1mul_benches["mulmont384_asm"]["gas_cost"],g1mul_benches["fallback"]["gas_cost"]),
+            "g2mul precompile": (45000, 0, 0),
+            "evm g2mul":(g2mul_benches['arith384_asm']['gas_cost'],g2mul_benches['mulmont384_asm']['gas_cost'],g2mul_benches['fallback']['gas_cost'])
+            # old 
+            #"asm384": (g1mul_benches["arith384_asm"]["time_ns"], g2mul_benches['arith384_asm']['time_ns']),
+            #"mulmont384_asm": (g1mul_benches["mulmont384_asm"]["time_ns"], g2mul_benches['mulmont384_asm']['time_ns']),
+            #"fallback": (g1mul_benches["fallback"]["time_ns"], g2mul_benches['fallback']['time_ns']),
+    }
+    categories = ("asm all ops", "asm mulmodx only", "fallback all ops")
+    plot_bls12381(gas_costs, "charts/bls12381-gas.png", categories, "Gas Cost: EVM implementations and Precompile Prices", "Gas Cost")
+
+def plot_bls12381(bench_data, output_file, categories, title, ylabel):
+    x = np.arange(len(categories))  # the label locations
+    width = 0.20  # the width of the bars
+    multiplier = 0
+
+    fig, ax = plt.subplots(layout='constrained')
+
+    for attribute, measurement in bench_data.items():
+        offset = width * multiplier
+        rects = ax.bar(x + offset, measurement, width, label=attribute)
+        ax.bar_label(rects, padding=3)
+        multiplier += 1
+
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    #ax.set_xticks(x + width, species)
+    ax.legend(loc='upper left', ncols=3)
+    ax.set_xticks(x + width, categories)
+
+    plt.savefig(output_file)
+
+g1mul_benches, g2mul_benches = parse_bls12381_bench()
+plot_bls12381_time(g1mul_benches, g2mul_benches)
+plot_bls12381_gas_cost(g1mul_benches, g2mul_benches)
+
+
 arith_op_benchmarks = parse_op_bench("benchmarks-results/arith.csv")
 evm_op_benchmarks = parse_op_bench("benchmarks-results/evm-op-benchmarks.csv")
 
-def parse_bls12381_bench():
-    pass #TODO
+bls12381_benchmarks = parse_bls12381_bench()
+
+
 
 def scatterplot_ns_data(fname: str, name: str, args):
     #len_x = len(args[0][1])
@@ -128,7 +209,6 @@ addmodx_fall_back_arith.color = arith_op_color
 addmodx_fall_back_arith.label = "2"
 addmodx_fall_back_arith.marker = "o"
 
-import pdb; pdb.set_trace()
 addmodx_asm384_evm = evm_op_benchmarks['arith384_asmaddmodx']
 addmodx_asm384_evm.color = asm384_op_color
 addmodx_asm384_evm.label = "1"
@@ -158,7 +238,6 @@ setmod_arith.color = arith_op_color
 setmod_arith.label = "setmod arithmetic"
 setmod_arith.marker = "o"
 
-import pdb; pdb.set_trace()
 
 def plot_op_benchmarks():
     # graphs 1: scatterplot, addmodx.  entries: addsub-model, addmodx-fallback-evm, addmodx-fallback-arith, addmodx-asm384-arith, addmodx-asm384-evm
