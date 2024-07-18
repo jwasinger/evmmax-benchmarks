@@ -13,3 +13,24 @@
 [submodule "evmmax-arith-eip5843"]
 	path = evmmax-arith-eip5843
 	url = https://github.com/jwasinger/evmmax-arith
+[submodule "evmmax-arith"]
+	path = evmmax-arith
+	url = https://github.com/jwasinger/evmmax-arith
+[submodule "evmmax-bls12-381"]
+	path = evmmax-bls12-381
+	url = https://github.com/jwasinger/evmmax-bls12-381
+[submodule "evm-benchmarks"]
+	path = evm-benchmarks
+	url = https://github.com/jwasinger/evm-benchmarks
+[submodule "go-ethereum-preset-fallback"]
+	path = go-ethereum-preset-fallback
+	url = https://github.com/jwasinger/go-ethereum
+[submodule "go-ethereum-preset-mulmodx-asm384"]
+	path = go-ethereum-preset-mulmodx-asm384
+	url = https://github.com/jwasinger/go-ethereum
+[submodule "go-ethereum-preset-arith-asm384"]
+	path = go-ethereum-preset-arith-asm384
+	url = https://github.com/jwasinger/go-ethereum
+[submodule "go-ethereum-bls12381-ecadd-double-and-add"]
+	path = go-ethereum-bls12381-ecadd-double-and-add
+	url = https://github.com/ethereum/go-ethereum
