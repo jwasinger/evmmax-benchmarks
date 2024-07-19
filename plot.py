@@ -16,14 +16,12 @@ from matplotlib.pyplot import figure
 # 25 ns / gas
 GAS_RATE = 27.0
 
-evm_op_color = "#ff7878"
-go_arith_be_color = "#E24C4C"
+arith_op_color = "#36ba41"
 
-arith_op_color = "#ffff78"
-go_arith_le_color = "#a0a011"
+evm_op_color = "#0f6316"
 
-asm384_op_color = "#61CD61"
-asm384_arith_color = "#1EA41E"
+asm384_op_color = "#871215"
+asm384_arith_color = "#c2363a"
 
 model_color = "black"
 
@@ -39,6 +37,7 @@ class ScatterPlotEntry():
         self.label = None
         self.marker = None
         self.annotate = False
+        self.is_model = False
 
     def add_datapoint(self, bit_width, time_ns):
         self.x_vals.append(int(bit_width))
@@ -167,20 +166,28 @@ def scatterplot_ns_data(fname: str, name: str, args):
     legend_lines = []
     legend_labels = []
 
-    plt.xlabel("input size (bits)")
-    plt.ylabel("runtime (ns)")
+    plt.xlabel("modulus size (bits)")
+    plt.ylabel("gas cost")
 
     for i, entry in enumerate(args):
        assert len(entry.x_vals) == len(entry.y_vals)
         
        for x, y in zip(entry.x_vals, entry.y_vals):
            if entry.annotate:
-               ax.annotate(int(y/GAS_RATE), (float(x) + 0.2, float(y)))
+               ax.annotate(int(y), (float(x) + 0.2, float(y)))
 
-       ax.plot(entry.x_vals, entry.y_vals, entry.marker, color=entry.color, label=entry.label)
+       x_vals = entry.x_vals
+       y_vals = entry.y_vals
+       if not entry.is_model:
+           y_vals = [val / GAS_RATE for val in y_vals]
+
+       ax.plot(x_vals, y_vals, entry.marker, color=entry.color, label=entry.label)
 
        legend_lines.append(Line2D([0], [0], color=entry.color, lw=4))
        legend_labels.append(entry.label)
+
+    x_ticks = ax.get_xticks()[:-1]
+    ax.set_xticks(x_ticks, labels=[int(val * 64) for val in x_ticks])
 
     #x_axis_labels = [str(i*64) for i in range(1, len_x+1)]
     #x_axis_pos = np.arange(1,len_x + 1)
@@ -326,11 +333,12 @@ addmodx_model = [np.float64(3), np.float64(30)]
 
 addmodx_model_entry = ScatterPlotEntry()
 addmodx_model_entry.x_vals = addmodx_fall_back_evm.x_vals
-addmodx_model_entry.y_vals = [math.ceil(y_val / GAS_RATE) * GAS_RATE for y_val in eval_model(addmodx_model, addmodx_model_entry.x_vals)]
+addmodx_model_entry.y_vals = [math.ceil(y_val / GAS_RATE) for y_val in eval_model(addmodx_model, addmodx_model_entry.x_vals)]
 addmodx_model_entry.color = "black"
 addmodx_model_entry.label = "addmodx gas model"
 addmodx_model_entry.marker = "o"
 addmodx_model_entry.annotate = True
+addmodx_model_entry.is_model = True
 
 # submodx
 submodx_model_entry = copy.deepcopy(addmodx_model_entry)
@@ -342,11 +350,12 @@ mulmodx_model = [np.float64(2.30), np.float64(-2), np.float64(32)]
 
 mulmodx_model_entry = ScatterPlotEntry()
 mulmodx_model_entry.x_vals = mulmodx_fall_back_evm.x_vals
-mulmodx_model_entry.y_vals = [math.ceil(y_val / GAS_RATE) * GAS_RATE for y_val in eval_model(mulmodx_model, mulmodx_model_entry.x_vals)]
+mulmodx_model_entry.y_vals = [math.ceil(y_val / GAS_RATE) for y_val in eval_model(mulmodx_model, mulmodx_model_entry.x_vals)]
 mulmodx_model_entry.color = "black"
 mulmodx_model_entry.label = "mulmodx gas model"
 mulmodx_model_entry.marker = "o"
 mulmodx_model_entry.annotate = True
+mulmodx_model_entry.is_model = True
 
 
 # setmod
@@ -356,21 +365,29 @@ setmod_model = [np.float64(110), np.float64(730)]
 
 setmod_model_entry = ScatterPlotEntry()
 setmod_model_entry.x_vals = setmod_arith.x_vals
-setmod_model_entry.y_vals = [math.ceil(y_val / GAS_RATE) * GAS_RATE for y_val in eval_model(setmod_model, setmod_model_entry.x_vals)]
+setmod_model_entry.y_vals = [math.ceil(y_val / GAS_RATE) for y_val in eval_model(setmod_model, setmod_model_entry.x_vals)]
 setmod_model_entry.color = "black"
 setmod_model_entry.label = "setmod gas model"
 setmod_model_entry.marker = "o"
 setmod_model_entry.annotate = True
+setmod_model_entry.is_model = True
 
 def plot_op_benchmarks():
     # graphs 1: scatterplot, addmodx.  entries: addsub-model, addmodx-fallback-evm, addmodx-fallback-arith, addmodx-asm384-arith, addmodx-asm384-evm
-    scatterplot_ns_data("charts/addmodx.png", "addmodx", [addmodx_fall_back_evm, addmodx_fall_back_arith, addmodx_asm384_arith, addmodx_asm384_evm, addmodx_model_entry])
+    scatterplot_ns_data("charts/addmodx-asm.png", "addmodx", [addmodx_fall_back_evm, addmodx_fall_back_arith, addmodx_asm384_arith, addmodx_asm384_evm, addmodx_model_entry])
+    # graphs 2: scatterplot submodx.  entries: addsub-model, submodx-fallback-evm, submodx-fallback-arith, submodx-asm384-arith, submodx-asm384-evm
+    scatterplot_ns_data("charts/submodx-asm.png", "submodx", [submodx_fall_back_evm, submodx_fall_back_arith, submodx_model_entry])
+    # graphs 3: scatterplot mulmodx.  entries: mulmodx-model, mulmodx-fallback-evm, mulmodx-fallback-arith, mulmodx-asm384-arith, mulmodx-asm384-evm
+    scatterplot_ns_data("charts/mulmodx-asm.png", "addmodx", [mulmodx_fall_back_evm, mulmodx_fall_back_arith, mulmodx_asm384_arith, mulmodx_asm384_evm, mulmodx_model_entry])
+    # graphs 4: scatterplot setmod.  entries: setmod-model, setmod-arith
+    scatterplot_ns_data("charts/setmod.png", "setmod", [setmod_arith, setmod_model_entry])
+    #without asm
+    # graphs 1: scatterplot, addmodx.  entries: addsub-model, addmodx-fallback-evm, addmodx-fallback-arith, addmodx-asm384-arith, addmodx-asm384-evm
+    scatterplot_ns_data("charts/addmodx.png", "addmodx", [addmodx_fall_back_evm, addmodx_fall_back_arith, addmodx_model_entry])
     # graphs 2: scatterplot submodx.  entries: addsub-model, submodx-fallback-evm, submodx-fallback-arith, submodx-asm384-arith, submodx-asm384-evm
     scatterplot_ns_data("charts/submodx.png", "submodx", [submodx_fall_back_evm, submodx_fall_back_arith, submodx_model_entry])
     # graphs 3: scatterplot mulmodx.  entries: mulmodx-model, mulmodx-fallback-evm, mulmodx-fallback-arith, mulmodx-asm384-arith, mulmodx-asm384-evm
-    scatterplot_ns_data("charts/mulmodx.png", "addmodx", [mulmodx_fall_back_evm, mulmodx_fall_back_arith, mulmodx_asm384_arith, mulmodx_asm384_evm, mulmodx_model_entry])
-    # graphs 4: scatterplot setmod.  entries: setmod-model, setmod-arith
-    scatterplot_ns_data("charts/setmod.png", "setmod", [setmod_arith, setmod_model_entry])
+    scatterplot_ns_data("charts/mulmodx.png", "addmodx", [mulmodx_fall_back_evm, mulmodx_fall_back_arith, mulmodx_model_entry])
 
 def print_cost_model_table():
     print("| Modulus Size | MULMODX cost | ADDMODX and SUBMODX cost | SETMOD cost |")
