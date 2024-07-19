@@ -158,7 +158,7 @@ def scatterplot_ns_data(fname: str, name: str, args):
     #span_y = y_max_all - y_min_all
 
     plt.rcParams["figure.figsize"] = (20, 10)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(layout="tight")
     #plt.ylim(0, y_min_all + int(span_y * 1.2))
     #plt.xlim(0, x_min_all + int(span_x * 1.2))
     #plt.xticks(args[0][1])
@@ -400,6 +400,8 @@ def print_cost_model_table():
         print("|{} - {} bits|{}|{}|{}|".format((limb_count - 1) * 64 + 1, limb_count * 64, cost_mulmodx, cost_addmodx, cost_setmod))
 
 if __name__ == "__main__":
+    matplotlib.rcParams.update({'font.size': 22})
+
     plot_op_benchmarks()
 
     g1mul_benches, g2mul_benches = parse_bls12381_bench()
