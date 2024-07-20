@@ -16,12 +16,11 @@ from matplotlib.pyplot import figure
 # 25 ns / gas
 GAS_RATE = 27.0
 
-arith_op_color = "#36ba41"
+arith_op_color = "#00AF0F"
+evm_op_color = "#AF00A1"
 
-evm_op_color = "#0f6316"
-
-asm384_op_color = "#871215"
-asm384_arith_color = "#c2363a"
+asm384_op_color = "#AE811B"
+asm384_arith_color = "#1B49AE"
 
 model_color = "black"
 
@@ -181,7 +180,7 @@ def scatterplot_ns_data(fname: str, name: str, args):
        if not entry.is_model:
            y_vals = [val / GAS_RATE for val in y_vals]
 
-       ax.plot(x_vals, y_vals, entry.marker, color=entry.color, label=entry.label)
+       ax.plot(x_vals, y_vals, entry.marker, color=entry.color, label=entry.label, ms=10)
 
        legend_lines.append(Line2D([0], [0], color=entry.color, lw=4))
        legend_labels.append(entry.label)
@@ -281,14 +280,27 @@ addmodx_asm384_evm.x_range = 6
 # submodx
 
 submodx_fall_back_evm = evm_op_benchmarks['fallbacksubmodx']
-submodx_fall_back_evm.color = asm384_op_color
+submodx_fall_back_evm.color = arith_op_color
 submodx_fall_back_evm.label = "go (evm)"
 submodx_fall_back_evm.marker = "o"
 
 submodx_fall_back_arith = arith_op_benchmarks['fallbacksubmodx']
-submodx_fall_back_arith.color = arith_op_color
+submodx_fall_back_arith.color = evm_op_color
 submodx_fall_back_arith.label = "go (arith)"
 submodx_fall_back_arith.marker = "o"
+
+submodx_asm384_evm = evm_op_benchmarks['arith384_asmsubmodx']
+submodx_asm384_evm.color = asm384_op_color
+submodx_asm384_evm.label = "asm (evm)"
+submodx_asm384_evm.marker = "o"
+submodx_asm384_evm.x_range = 6
+
+submodx_asm384_arith = arith_op_benchmarks['asm384submodx']
+submodx_asm384_arith.color = asm384_arith_color
+submodx_asm384_arith.label = "asm (arith)"
+submodx_asm384_arith.marker = "o"
+submodx_asm384_arith.x_range = 6
+submodx_asm384_evm.x_range = 6
 
 # TODO: submod asm ops
 
@@ -376,7 +388,7 @@ def plot_op_benchmarks():
     # graphs 1: scatterplot, addmodx.  entries: addsub-model, addmodx-fallback-evm, addmodx-fallback-arith, addmodx-asm384-arith, addmodx-asm384-evm
     scatterplot_ns_data("charts/addmodx-asm.png", "addmodx", [addmodx_fall_back_evm, addmodx_fall_back_arith, addmodx_asm384_arith, addmodx_asm384_evm, addmodx_model_entry])
     # graphs 2: scatterplot submodx.  entries: addsub-model, submodx-fallback-evm, submodx-fallback-arith, submodx-asm384-arith, submodx-asm384-evm
-    scatterplot_ns_data("charts/submodx-asm.png", "submodx", [submodx_fall_back_evm, submodx_fall_back_arith, submodx_model_entry])
+    scatterplot_ns_data("charts/submodx-asm.png", "submodx", [submodx_fall_back_evm, submodx_fall_back_arith, submodx_asm384_arith, submodx_asm384_evm, submodx_model_entry])
     # graphs 3: scatterplot mulmodx.  entries: mulmodx-model, mulmodx-fallback-evm, mulmodx-fallback-arith, mulmodx-asm384-arith, mulmodx-asm384-evm
     scatterplot_ns_data("charts/mulmodx-asm.png", "addmodx", [mulmodx_fall_back_evm, mulmodx_fall_back_arith, mulmodx_asm384_arith, mulmodx_asm384_evm, mulmodx_model_entry])
     # graphs 4: scatterplot setmod.  entries: setmod-model, setmod-arith
