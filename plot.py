@@ -280,12 +280,12 @@ addmodx_asm384_evm.x_range = 6
 # submodx
 
 submodx_fall_back_evm = evm_op_benchmarks['fallbacksubmodx']
-submodx_fall_back_evm.color = arith_op_color
+submodx_fall_back_evm.color = evm_op_color
 submodx_fall_back_evm.label = "go (evm)"
 submodx_fall_back_evm.marker = "o"
 
 submodx_fall_back_arith = arith_op_benchmarks['fallbacksubmodx']
-submodx_fall_back_arith.color = evm_op_color
+submodx_fall_back_arith.color = arith_op_color
 submodx_fall_back_arith.label = "go (arith)"
 submodx_fall_back_arith.marker = "o"
 
