@@ -1,9 +1,6 @@
 [submodule "evm-benchmarks-eip-5843"]
 	path = evm-benchmarks-eip-5843
 	url = https://github.com/jwasinger/evm-benchmarks
-[submodule "evm-benchmarks-le"]
-	path = evm-benchmarks-le
-	url = https://github.com/jwasinger/evm-benchmarks
 [submodule "evm-benchmarks-asm384"]
 	path = evm-benchmarks-asm384
 	url = https://github.com/jwasinger/evm-benchmarks
