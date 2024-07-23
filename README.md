@@ -39,11 +39,13 @@ pip install -r requirements.txt
     1. `PRESET="fallback" GETH_EVM=./go-ethereum-preset-fallback/build/bin/evm python3 evmmax-bls12-381/test.py > benchmarks-results/geth-bls12381-benchmarks.csv`
     2. `PRESET="mulmont384_asm" GETH_EVM=./go-ethereum-preset-mulmodx-asm384/build/bin/evm python3 evmmax-bls12-381/test.py >> benchmarks-results/geth-bls12381-benchmarks.csv`
     3. `PRESET="arith384_asm" GETH_EVM=./go-ethereum-preset-arith-asm384/build/bin/evm python3 evmmax-bls12-381/test.py >> benchmarks-results/geth-bls12381-benchmarks.csv`
-* evm op benchmarks:
+* standalone evm op benchmarks:
     1. `PRESET="fallback" GETH_EVM=./go-ethereum-preset-fallback/build/bin/evm python3 evm-benchmarks/evmmax_generator/generate.py > benchmarks-results/evm-op-benchmarks.csv`
     2. `PRESET="arith384_asm" GETH_EVM=./go-ethereum-preset-arith-asm384/build/bin/evm python3 evm-benchmarks/evmmax_generator/generate.py 6 6 >> benchmarks-results/evm-op-benchmarks.csv`
 * gnark bls12381 g1/g2 mul (double-and-add) benchmarks (used in the graphs)
     1. `(cd gnark-crypto/ecc/bls12-381 && go test -bench=G1JacScalarMultiplication -run=^$`.  Benchmark results from my machine currently-hardcoded in the graph plotting script.
+* arithmetic-only benchmarks for `ADDMODX`/`SUBMODX`/`MULMODX`:
+    1. `(cd evmmax-arith/ && go test -bench=.) | python3 format-go-benchmark-output-as-csv.py > benchmarks-results/arith.csv`
 
 ### Plot Charts
 ```
