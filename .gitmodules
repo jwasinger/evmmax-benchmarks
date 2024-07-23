@@ -1,15 +1,3 @@
-[submodule "evm-benchmarks-eip-5843"]
-	path = evm-benchmarks-eip-5843
-	url = https://github.com/jwasinger/evm-benchmarks
-[submodule "evm-benchmarks-asm384"]
-	path = evm-benchmarks-asm384
-	url = https://github.com/jwasinger/evm-benchmarks
-[submodule "evmmax-arith-little-endian"]
-	path = evmmax-arith-little-endian
-	url = https://github.com/jwasinger/evmmax-arith
-[submodule "evmmax-arith-eip5843"]
-	path = evmmax-arith-eip5843
-	url = https://github.com/jwasinger/evmmax-arith
 [submodule "evmmax-arith"]
 	path = evmmax-arith
 	url = https://github.com/jwasinger/evmmax-arith
@@ -31,3 +19,6 @@
 [submodule "go-ethereum-bls12381-ecadd-double-and-add"]
 	path = go-ethereum-bls12381-ecadd-double-and-add
 	url = https://github.com/ethereum/go-ethereum
+[submodule "gnark-crypto"]
+	path = gnark-crypto
+	url = https://github.com/consensys/gnark-crypto
